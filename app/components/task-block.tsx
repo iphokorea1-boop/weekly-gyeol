@@ -50,8 +50,8 @@ export default function TaskBlock({
         width: `calc(${100 / cols}% - 6px)`,
       }}
       className={cn(
-        "pressable group absolute overflow-hidden rounded-lg border py-1 pl-3 pr-1.5 text-left shadow-xs",
-        "hover:z-10 hover:shadow-md",
+        "pressable lift group absolute overflow-hidden rounded-lg border py-1 pl-3 pr-1.5 text-left",
+        "hover:z-10",
         visuals.surface,
         pending && "opacity-60",
         done && "opacity-55"

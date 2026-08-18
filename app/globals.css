@@ -57,6 +57,13 @@
   --destructive: #e5484d; /* red-9 */
   --input: var(--border);
   --ring: var(--dated);
+
+  /* Three depths for the rest / hover / pressed states. */
+  --shadow-rest: 0 1px 2px rgb(16 15 14 / 0.05);
+  --shadow-raised: 0 6px 16px -4px rgb(16 15 14 / 0.12), 0 2px 5px -2px rgb(16 15 14 / 0.07);
+  --shadow-pressed: 0 1px 1px rgb(16 15 14 / 0.07);
+
+  --sweep-color: rgb(255 255 255 / 0.75);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -87,6 +94,14 @@
 
     --primary-foreground: #ffffff;
     --destructive: #ff6369;
+
+    /* A cast shadow is nearly invisible against a near-black page, so depth
+       here comes from a light rim on the raised edge instead. */
+    --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-raised: 0 6px 18px -4px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.06);
+    --shadow-pressed: 0 1px 1px rgb(0 0 0 / 0.5);
+
+    --sweep-color: rgb(255 255 255 / 0.14);
   }
 }
 
@@ -117,6 +132,12 @@
 
   --primary-foreground: #ffffff;
   --destructive: #ff6369;
+
+  --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-raised: 0 6px 18px -4px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-pressed: 0 1px 1px rgb(0 0 0 / 0.5);
+
+  --sweep-color: rgb(255 255 255 / 0.14);
 }
 
 @theme inline {
@@ -194,46 +215,73 @@
 /* ---------------------------------------------------------------------------
  * Press feedback
  *
- * The press asymmetry is the whole trick: the scale-down runs in 90ms so the
- * surface feels welded to the finger, while the release springs back over
- * 400ms. Matching the two durations is what makes most web buttons feel wrong
- * — equal timing reads as sluggish going down and mechanical coming up.
+ * Three states, not two. Rest sits flat, hover raises the surface off the page,
+ * and pressing drives it back down *past* rest. The hover→press travel is what
+ * actually reads as a click; scale alone, with nothing moving in depth, just
+ * looks like the element twitched.
  *
- * Depth is inversely proportional to size. A 3% shrink is invisible on a 20px
+ * Timing is asymmetric on purpose. Hover is crisp (180ms, no bounce) because a
+ * springy hover feels mushy and unresponsive. The press-down is near-instant at
+ * 100ms so the surface feels welded to the cursor. Only the *release* springs,
+ * over 350ms, because that's the one moment something is genuinely rebounding.
+ *
+ * Scale is inversely proportional to size: a 3% shrink is invisible on a 20px
  * checkbox and violent on a full-width card, so large surfaces move less and
- * small controls move more, which keeps the *apparent* travel constant.
+ * small controls move more, keeping the apparent travel constant.
  *
  * These rules are deliberately unlayered so they win over Tailwind's utility
- * layer without needing !important; `transition` here is the complete
- * declaration for anything carrying .pressable.
+ * layer without needing !important.
  */
 .pressable {
-  --press-scale: 0.97;
+  --press-scale: 0.96;
   touch-action: manipulation; /* drops the 300ms tap delay on mobile */
   -webkit-tap-highlight-color: transparent; /* no grey flash over our own feedback */
   transition:
-    scale 400ms var(--ease-spring),
-    translate 400ms var(--ease-spring),
-    box-shadow 300ms var(--ease-smooth),
-    background-color 220ms var(--ease-smooth),
-    border-color 220ms var(--ease-smooth),
-    color 220ms var(--ease-smooth),
-    opacity 220ms var(--ease-smooth);
+    scale 350ms var(--ease-spring),
+    translate 180ms var(--ease-smooth),
+    box-shadow 180ms var(--ease-smooth),
+    background-color 180ms var(--ease-smooth),
+    border-color 180ms var(--ease-smooth),
+    color 180ms var(--ease-smooth),
+    opacity 180ms var(--ease-smooth);
 }
 
 .pressable:active {
   scale: var(--press-scale);
-  transition-duration: 90ms;
+  transition-duration: 100ms;
 }
 
 /* Small controls: checkboxes, icon buttons, weekday pills. */
 .press-deep {
-  --press-scale: 0.88;
+  --press-scale: 0.86;
 }
 
-/* Large surfaces: task rows, cards, calendar cells. */
+/* Large surfaces: task rows, calendar cells. Still has to be *visible* — the
+   previous 0.988 was mathematically subtle and perceptually nothing. */
 .press-soft {
-  --press-scale: 0.988;
+  --press-scale: 0.978;
+}
+
+/*
+ * Depth, for surfaces that should feel like objects rather than regions.
+ * Kept separate from .pressable because nav links and plain text buttons want
+ * the press without gaining a shadow they never had at rest.
+ */
+.lift {
+  box-shadow: var(--shadow-rest);
+}
+
+@media (hover: hover) {
+  .lift:hover {
+    translate: 0 -2px;
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+/* Pressed: back down to the page and the shadow collapses under it. */
+.lift:active {
+  translate: 0 0;
+  box-shadow: var(--shadow-pressed);
 }
 
 /* ---------------------------------------------------------------------------
@@ -300,6 +348,35 @@
   }
 }
 
+/*
+ * List entrance. Safe to run on every render because React keeps rows mounted
+ * across a refresh when their key is unchanged — a CSS animation only restarts
+ * when the node is actually created, so this fires on load and for genuinely
+ * new rows, not every time a checkbox is ticked.
+ */
+@keyframes item-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* A light sweep across a row the moment it's completed. */
+@keyframes complete-sweep {
+  from {
+    opacity: 0.55;
+    translate: -100% 0;
+  }
+  to {
+    opacity: 0;
+    translate: 100% 0;
+  }
+}
+
 @keyframes panel-in {
   from {
     opacity: 0;
@@ -329,6 +406,35 @@
   animation: panel-in 260ms var(--ease-smooth);
 }
 
+/* `backwards` holds the from-state through the stagger delay, so a row waiting
+   its turn stays invisible instead of flashing in and then animating. */
+.animate-item-in {
+  animation: item-in 400ms var(--ease-smooth) backwards;
+}
+
+.animate-complete-sweep {
+  animation: complete-sweep 620ms var(--ease-smooth) forwards;
+}
+
+/* The nav indicator slides between tabs rather than cutting, so the eye can
+   follow which section it moved to. */
+.nav-pill {
+  transition:
+    translate 420ms var(--ease-spring),
+    width 420ms var(--ease-spring);
+}
+
+/* Driven by a token, not a `dark:` variant — dark mode here comes from
+   prefers-color-scheme, and no .dark class exists for that variant to match. */
+.complete-sweep-fill {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--sweep-color),
+    transparent
+  );
+}
+
 .check-draw path {
   stroke-dasharray: 30;
   animation: check-draw 300ms var(--ease-smooth) forwards;
@@ -345,10 +451,19 @@
     transition-duration: 1ms;
     scale: 1;
   }
+  .lift:hover,
+  .lift:active {
+    translate: 0 0;
+  }
+  .nav-pill {
+    transition-duration: 1ms;
+  }
   .animate-xp-burst,
   .animate-check-pop,
   .animate-ring-pulse,
   .animate-panel-in,
+  .animate-item-in,
+  .animate-complete-sweep,
   .check-draw path {
     animation: none;
   }
@@ -356,7 +471,8 @@
     stroke-dashoffset: 0;
   }
   .animate-xp-burst,
-  .animate-ring-pulse {
+  .animate-ring-pulse,
+  .animate-complete-sweep {
     opacity: 0;
   }
 }

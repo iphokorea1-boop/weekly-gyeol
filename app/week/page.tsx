@@ -145,11 +145,12 @@ export default async function WeekPage({ searchParams }: PageProps) {
             <p className="text-sm text-ink-faint">쌓아둔 할 일이 없어요.</p>
           ) : (
             <div className="flex flex-col gap-1.5">
-              {floating.map((t) => (
+              {floating.map((t, i) => (
                 <TaskItem
                   key={t.id}
                   kind="floating"
                   task={toFloatingItem(t)}
+                  index={i}
                   extra={
                     <DayAssignPicker taskId={t.id} weekDates={weekDates} />
                   }

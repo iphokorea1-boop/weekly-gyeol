@@ -29,10 +29,13 @@ export default function TaskItem({
   task,
   kind,
   extra,
+  index = 0,
 }: {
   task: TaskItemData;
   kind: TaskKind;
   extra?: ReactNode;
+  /** Position in its list, used to stagger the entrance. */
+  index?: number;
 }) {
   const { pending, burst, done, celebrating, toggle, remove } = useTaskActions(
     task.id,
@@ -48,14 +51,25 @@ export default function TaskItem({
 
   return (
     <div
+      // Capped at 6 so a long list doesn't leave the last rows visibly waiting.
+      style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
       className={cn(
-        "pressable press-soft group relative flex items-center gap-2.5 rounded-xl border py-2.5 pl-5 pr-2.5 shadow-xs",
-        "hover:-translate-y-px hover:shadow-sm",
+        "pressable press-soft lift animate-item-in group relative flex items-center gap-2.5 rounded-xl border py-2.5 pl-5 pr-2.5",
         visuals.surface,
         pending && "opacity-60",
         done && "opacity-60"
       )}
     >
+      {/* Clipped by its own wrapper rather than the row, so the row can still
+          let the XP burst escape above its top edge. */}
+      {celebrating && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl"
+        >
+          <span className="animate-complete-sweep complete-sweep-fill absolute inset-0" />
+        </span>
+      )}
       <span
         aria-hidden
         className={cn(

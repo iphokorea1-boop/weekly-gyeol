@@ -135,8 +135,8 @@ export default async function Home() {
               오늘 예정된 할 일이 없어요.
             </p>
           )}
-          {dated.map((t) => (
-            <TaskItem key={t.id} kind="dated" task={toDatedItem(t)} />
+          {dated.map((t, i) => (
+            <TaskItem key={t.id} kind="dated" task={toDatedItem(t)} index={i} />
           ))}
         </div>
       </section>
@@ -149,8 +149,13 @@ export default async function Home() {
               오늘 해당하는 루틴이 없어요.
             </p>
           )}
-          {routines.map((t) => (
-            <TaskItem key={t.id} kind="routine" task={toRoutineItem(t)} />
+          {routines.map((t, i) => (
+            <TaskItem
+              key={t.id}
+              kind="routine"
+              task={toRoutineItem(t)}
+              index={i}
+            />
           ))}
         </div>
       </section>
@@ -163,8 +168,13 @@ export default async function Home() {
               쌓아둔 할 일이 없어요.
             </p>
           )}
-          {floating.map((t) => (
-            <TaskItem key={t.id} kind="floating" task={toFloatingItem(t)} />
+          {floating.map((t, i) => (
+            <TaskItem
+              key={t.id}
+              kind="floating"
+              task={toFloatingItem(t)}
+              index={i}
+            />
           ))}
         </div>
       </section>

@@ -191,7 +191,7 @@ export default function AddTaskForm() {
         <button
           type="submit"
           disabled={submitting || !title.trim()}
-          className="pressable rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground shadow-sm hover:brightness-110 disabled:opacity-40"
+          className="pressable lift rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:brightness-110 disabled:opacity-40"
         >
           추가
         </button>
