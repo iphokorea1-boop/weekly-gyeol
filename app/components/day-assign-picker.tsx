@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { weekdayLabel } from "@/lib/task-utils";
+import { weekdayLabel, weekdayOf } from "@/lib/task-utils";
 import { useTaskActions } from "@/app/components/use-task-actions";
 
 export default function DayAssignPicker({
@@ -37,7 +37,7 @@ export default function DayAssignPicker({
           onClick={() => assignToDate(date)}
           className="grid h-5 w-5 place-items-center rounded-full border border-floating text-[10px] font-semibold text-floating-ink hover:bg-floating-soft"
         >
-          {weekdayLabel(date.getDay())}
+          {weekdayLabel(weekdayOf(date))}
         </button>
       ))}
       <button

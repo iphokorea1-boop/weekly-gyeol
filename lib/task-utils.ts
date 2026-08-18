@@ -11,16 +11,74 @@ export function taskKind(task: TaskLike): TaskKind {
   return "floating";
 }
 
+/**
+ * The whole app is anchored to Korea Standard Time. "Today" has to mean today
+ * in Seoul no matter where the code runs — Vercel's servers are UTC, so relying
+ * on the machine's local time made the app think it was still yesterday between
+ * midnight and 09:00 KST. Korea has had no daylight saving since 1988, so a
+ * fixed offset is exact and needs no timezone database.
+ *
+ * Every calendar helper below is deliberately written with UTC getters rather
+ * than local ones. That keeps results identical on a UTC server and on a KST
+ * laptop, which is what the local-time versions failed to do.
+ */
+export const KST_OFFSET_MINUTES = 9 * 60;
+
+/** The instant shifted so UTC getters read out Seoul wall-clock values. */
+function seoulClock(date: Date): Date {
+  return new Date(date.getTime() + KST_OFFSET_MINUTES * 60_000);
+}
+
+/**
+ * Canonical date-only value: UTC midnight of the Seoul calendar day the given
+ * instant falls on. Every date column in the database holds this shape, which
+ * makes the function idempotent — re-normalising a stored date is a no-op.
+ */
 export function toDateOnly(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const k = seoulClock(date);
+  return new Date(Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()));
+}
+
+/** Today in Seoul, as a date-only value. */
+export function todayInSeoul(): Date {
+  return toDateOnly(new Date());
+}
+
+/** Minutes elapsed since Seoul midnight — used to place the "now" line. */
+export function minutesOfDayInSeoul(date: Date = new Date()): number {
+  const k = seoulClock(date);
+  return k.getUTCHours() * 60 + k.getUTCMinutes();
+}
+
+/** Hour of the Seoul day (0–23) for the given instant. */
+export function hourInSeoul(date: Date): number {
+  return seoulClock(date).getUTCHours();
+}
+
+/** Builds a date-only value from calendar parts. `month` is 0-indexed. */
+export function makeDate(year: number, month: number, day: number): Date {
+  return new Date(Date.UTC(year, month, day));
+}
+
+/** Day of week (0 Sun .. 6 Sat) on the Seoul calendar. */
+export function weekdayOf(date: Date): number {
+  return toDateOnly(date).getUTCDay();
+}
+
+/**
+ * Formats a date-only value in Korean. These are UTC midnight, so the formatter
+ * must be told to read them in UTC — left to the runtime's local zone it would
+ * render the previous day for anyone west of Greenwich.
+ */
+export function formatKo(
+  date: Date,
+  options: Intl.DateTimeFormatOptions
+): string {
+  return date.toLocaleDateString("ko-KR", { ...options, timeZone: "UTC" });
 }
 
 export function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return toDateOnly(a).getTime() === toDateOnly(b).getTime();
 }
 
 export function parseWeekdays(weekdays: string | null): number[] {
@@ -32,7 +90,7 @@ export function parseWeekdays(weekdays: string | null): number[] {
 }
 
 export function routineOccursOn(weekdays: string | null, date: Date): boolean {
-  return parseWeekdays(weekdays).includes(date.getDay());
+  return parseWeekdays(weekdays).includes(weekdayOf(date));
 }
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -90,15 +148,15 @@ export function capacityPercent(
 
 export function getWeekStart(date: Date): Date {
   const d = toDateOnly(date);
-  const day = d.getDay(); // 0 Sun .. 6 Sat
+  const day = d.getUTCDay(); // 0 Sun .. 6 Sat
   const diffToMonday = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diffToMonday);
+  d.setUTCDate(d.getUTCDate() + diffToMonday);
   return d;
 }
 
 export function addDays(date: Date, n: number): Date {
   const d = new Date(date);
-  d.setDate(d.getDate() + n);
+  d.setUTCDate(d.getUTCDate() + n);
   return d;
 }
 
@@ -125,15 +183,18 @@ export function daySummary<T extends ScheduledTask>(tasks: T[], date: Date) {
 }
 
 export function getMonthStart(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+  const d = toDateOnly(date);
+  return makeDate(d.getUTCFullYear(), d.getUTCMonth(), 1);
 }
 
 export function getMonthEnd(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const d = toDateOnly(date);
+  return makeDate(d.getUTCFullYear(), d.getUTCMonth() + 1, 0);
 }
 
 export function addMonths(date: Date, n: number): Date {
-  return new Date(date.getFullYear(), date.getMonth() + n, 1);
+  const d = toDateOnly(date);
+  return makeDate(d.getUTCFullYear(), d.getUTCMonth() + n, 1);
 }
 
 // Days of the printed month grid: whole weeks (Mon-start) covering the month.
@@ -150,26 +211,28 @@ export function getMonthGrid(monthStart: Date): Date[] {
 
 // Weekday index with Monday as 0, matching the grid column order.
 export function mondayIndex(date: Date): number {
-  return (date.getDay() + 6) % 7;
+  return (weekdayOf(date) + 6) % 7;
 }
 
 export function formatMonthISO(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  const d = toDateOnly(date);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-// Parses ?month=YYYY-MM as a local date; falls back to today when absent or malformed.
+// Parses ?month=YYYY-MM; falls back to the current Seoul month when absent or
+// malformed. The explicit Z keeps parsing off the runtime's local zone.
 export function parseMonthParam(month: string | undefined): Date {
   if (month) {
-    const parsed = new Date(`${month}-01T00:00:00`);
+    const parsed = new Date(`${month}-01T00:00:00Z`);
     if (!Number.isNaN(parsed.getTime())) return getMonthStart(parsed);
   }
-  return getMonthStart(new Date());
+  return getMonthStart(todayInSeoul());
 }
 
 export function parseYearParam(year: string | undefined): number {
   const parsed = Number(year);
   if (Number.isInteger(parsed) && parsed >= 1970 && parsed <= 9999) return parsed;
-  return new Date().getFullYear();
+  return todayInSeoul().getUTCFullYear();
 }
 
 // Assigns side-by-side columns to time-overlapping items (classic day-view
@@ -227,8 +290,9 @@ export function layoutOverlaps<T>(
 }
 
 export function formatDateISO(date: Date): string {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
+  const d = toDateOnly(date);
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }

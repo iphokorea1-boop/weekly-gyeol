@@ -1,4 +1,11 @@
-import { addDays, isDoneOn, occursOn, toDateOnly, type ScheduledTask } from "@/lib/task-utils";
+import {
+  addDays,
+  hourInSeoul,
+  isDoneOn,
+  occursOn,
+  toDateOnly,
+  type ScheduledTask,
+} from "@/lib/task-utils";
 
 export type GamifiedTask = ScheduledTask & {
   priority: number;
@@ -130,8 +137,10 @@ export function computeAchievements(
     if (s.total > 0 && s.done === s.total) perfectDays++;
   }
 
+  // "Before 9am" has to mean 9am in Seoul; on a UTC server every completion
+  // logged before 6pm KST would otherwise look like an early morning.
   const earlyBirds = completions.filter(
-    (c) => new Date(c.completedAt).getHours() < 9
+    (c) => hourInSeoul(new Date(c.completedAt)) < 9
   ).length;
 
   const backlogEmpty =

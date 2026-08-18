@@ -4,6 +4,7 @@ import {
   addMonths,
   daySummary,
   formatDateISO,
+  formatKo,
   formatMonthISO,
   getMonthGrid,
   isDoneOn,
@@ -11,8 +12,9 @@ import {
   parseMonthParam,
   routineOccursOn,
   taskKind,
-  toDateOnly,
+  todayInSeoul,
   weekdayLabel,
+  weekdayOf,
 } from "@/lib/task-utils";
 import PeriodNav from "@/app/components/period-nav";
 
@@ -37,18 +39,15 @@ export default async function MonthPage({ searchParams }: PageProps) {
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
   });
 
-  const today = toDateOnly(new Date());
+  const today = todayInSeoul();
   const weeks = Array.from({ length: grid.length / 7 }, (_, i) =>
     grid.slice(i * 7, i * 7 + 7)
   );
 
-  const monthLabel = monthStart.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-  });
+  const monthLabel = formatKo(monthStart, { year: "numeric", month: "long" });
 
   const monthDays = grid.filter(
-    (d) => d.getMonth() === monthStart.getMonth()
+    (d) => d.getUTCMonth() === monthStart.getUTCMonth()
   );
   const monthTotals = monthDays.reduce(
     (acc, d) => {
@@ -91,7 +90,7 @@ export default async function MonthPage({ searchParams }: PageProps) {
                 key={d.toISOString()}
                 className="border-r border-border px-2 py-2 text-center text-[11px] font-bold tracking-wide text-ink-faint last:border-r-0"
               >
-                {weekdayLabel(d.getDay())}
+                {weekdayLabel(weekdayOf(d))}
               </div>
             ))}
           </div>
@@ -102,7 +101,7 @@ export default async function MonthPage({ searchParams }: PageProps) {
               className="grid grid-cols-7 border-b border-border last:border-b-0"
             >
               {week.map((date) => {
-                const inMonth = date.getMonth() === monthStart.getMonth();
+                const inMonth = date.getUTCMonth() === monthStart.getUTCMonth();
                 const isToday = isSameDay(date, today);
                 const dated = tasks.filter(
                   (t) =>
@@ -131,7 +130,7 @@ export default async function MonthPage({ searchParams }: PageProps) {
                         isToday ? "bg-dated text-white" : ""
                       }`}
                     >
-                      {date.getDate()}
+                      {date.getUTCDate()}
                     </span>
 
                     <div className="flex flex-col gap-1">

@@ -3,6 +3,7 @@ import {
   addDays,
   capacityPercent,
   formatDateISO,
+  formatKo,
   getMonthStart,
   getWeekStart,
   GRID_END_HOUR,
@@ -12,6 +13,7 @@ import {
   minutesFromGridStart,
   routineOccursOn,
   taskKind,
+  todayInSeoul,
   toDateOnly,
 } from "@/lib/task-utils";
 import { xpFor } from "@/lib/gamification";
@@ -32,15 +34,13 @@ type PageProps = { searchParams: Promise<{ week?: string }> };
 
 function formatRange(start: Date, end: Date) {
   const opts: Intl.DateTimeFormatOptions = { month: "numeric", day: "numeric" };
-  return `${start.toLocaleDateString("ko-KR", opts)} – ${end.toLocaleDateString(
-    "ko-KR",
-    opts
-  )}`;
+  return `${formatKo(start, opts)} – ${formatKo(end, opts)}`;
 }
 
 export default async function WeekPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const base = params.week ? new Date(params.week) : new Date();
+  const today = todayInSeoul();
+  const base = params.week ? new Date(params.week) : today;
   const weekStart = getWeekStart(base);
   const weekEnd = addDays(weekStart, 6);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -135,7 +135,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
         <MiniMonth
           monthStart={getMonthStart(weekStart)}
           weekStart={weekStart}
-          today={toDateOnly(new Date())}
+          today={today}
         />
         <aside className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 shadow-sm">
           <h2 className="text-xs font-bold tracking-wide text-ink-faint">
@@ -168,7 +168,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
             >
               <div />
               {days.map(({ date, capacity }) => {
-                const isToday = isSameDay(date, toDateOnly(new Date()));
+                const isToday = isSameDay(date, today);
                 return (
                   <div
                     key={date.toISOString()}
@@ -181,14 +181,14 @@ export default async function WeekPage({ searchParams }: PageProps) {
                         isToday ? "text-dated-ink" : "text-ink-faint"
                       }`}
                     >
-                      {date.toLocaleDateString("ko-KR", { weekday: "short" })}
+                      {formatKo(date, { weekday: "short" })}
                     </div>
                     <div
                       className={`mt-0.5 text-[15px] font-bold tabular-nums ${
                         isToday ? "text-dated-ink" : ""
                       }`}
                     >
-                      {date.getDate()}
+                      {date.getUTCDate()}
                     </div>
                     <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-surface-sunk">
                       <span
@@ -244,7 +244,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
               </div>
 
               {days.map(({ date, timedEvents }) => {
-                const isToday = isSameDay(date, toDateOnly(new Date()));
+                const isToday = isSameDay(date, today);
                 return (
                   <div
                     key={date.toISOString()}

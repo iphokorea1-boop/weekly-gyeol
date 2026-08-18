@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toDateOnly } from "@/lib/task-utils";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -13,7 +14,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     data: {
       ...(title !== undefined ? { title } : {}),
       ...(memo !== undefined ? { memo } : {}),
-      ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
+      ...(dueDate !== undefined
+        ? { dueDate: dueDate ? toDateOnly(new Date(dueDate)) : null }
+        : {}),
       ...(startTime !== undefined ? { startTime } : {}),
       ...(endTime !== undefined ? { endTime } : {}),
       ...(weekdays !== undefined ? { weekdays } : {}),

@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   addDays,
   formatDateISO,
+  formatKo,
   getMonthGrid,
   isSameDay,
   weekdayLabel,
@@ -24,10 +25,7 @@ export default function MiniMonth({
   return (
     <section className="rounded-xl border border-border bg-surface p-3 shadow-sm">
       <h2 className="text-xs font-bold tracking-wide">
-        {monthStart.toLocaleDateString("ko-KR", {
-          year: "numeric",
-          month: "long",
-        })}
+        {formatKo(monthStart, { year: "numeric", month: "long" })}
       </h2>
 
       <div className="mt-2 grid grid-cols-7 gap-y-1">
@@ -42,7 +40,7 @@ export default function MiniMonth({
 
         {grid.map((date) => {
           const inWeek = date >= weekStart && date <= weekEnd;
-          const inMonth = date.getMonth() === monthStart.getMonth();
+          const inMonth = date.getUTCMonth() === monthStart.getUTCMonth();
           const isToday = isSameDay(date, today);
 
           return (
@@ -55,7 +53,7 @@ export default function MiniMonth({
                 isToday ? "ring-1 ring-dated" : ""
               }`}
             >
-              {date.getDate()}
+              {date.getUTCDate()}
             </Link>
           );
         })}

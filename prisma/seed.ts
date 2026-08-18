@@ -2,11 +2,12 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// Matches the app's storage shape: UTC midnight of a Seoul calendar day.
 function inDays(n: number) {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + n);
-  return d;
+  const seoul = new Date(Date.now() + 9 * 60 * 60_000);
+  return new Date(
+    Date.UTC(seoul.getUTCFullYear(), seoul.getUTCMonth(), seoul.getUTCDate() + n)
+  );
 }
 
 async function main() {

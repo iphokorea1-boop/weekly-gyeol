@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GRID_RANGE_MINUTES, GRID_START_HOUR } from "@/lib/task-utils";
+import {
+  GRID_RANGE_MINUTES,
+  GRID_START_HOUR,
+  minutesOfDayInSeoul,
+} from "@/lib/task-utils";
 
 // Marks the current time across today's column. Rendered client-side so the
-// line keeps moving after the server render.
+// line keeps moving after the server render. Read in Seoul time rather than the
+// device's own, so the line stays on the same grid the rest of the app draws.
 export default function NowLine({ pxPerMinute }: { pxPerMinute: number }) {
   const [minutes, setMinutes] = useState<number | null>(null);
 
   useEffect(() => {
     const update = () => {
-      const now = new Date();
-      setMinutes(
-        now.getHours() * 60 + now.getMinutes() - GRID_START_HOUR * 60
-      );
+      setMinutes(minutesOfDayInSeoul() - GRID_START_HOUR * 60);
     };
     update();
     const id = setInterval(update, 60_000);

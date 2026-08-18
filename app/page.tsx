@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import {
   capacityPercent,
+  formatKo,
   formatWeekdays,
   isSameDay,
   routineOccursOn,
   taskKind,
+  todayInSeoul,
   toDateOnly,
 } from "@/lib/task-utils";
 import { computeStreaks, totalXp, xpFor } from "@/lib/gamification";
@@ -16,11 +18,7 @@ import StreakCard from "@/app/components/streak-card";
 export const dynamic = "force-dynamic";
 
 function formatToday(d: Date) {
-  return d.toLocaleDateString("ko-KR", {
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  return formatKo(d, { month: "long", day: "numeric", weekday: "long" });
 }
 
 function SectionHeading({ title, count }: { title: string; count: number }) {
@@ -43,7 +41,7 @@ export default async function Home() {
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
   });
 
-  const today = toDateOnly(new Date());
+  const today = todayInSeoul();
 
   const routines = tasks.filter(
     (t) => taskKind(t) === "routine" && routineOccursOn(t.weekdays, today)

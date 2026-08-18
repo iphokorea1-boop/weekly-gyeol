@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toDateOnly } from "@/lib/task-utils";
 
 export async function GET() {
   const tasks = await prisma.task.findMany({
@@ -22,7 +23,9 @@ export async function POST(req: NextRequest) {
     data: {
       title: title.trim(),
       memo: memo || null,
-      dueDate: dueDate ? new Date(dueDate) : null,
+      // Normalised so a due date always means the same Seoul day, whether it
+      // arrived as "2026-08-19" from a date input or as a full instant.
+      dueDate: dueDate ? toDateOnly(new Date(dueDate)) : null,
       startTime: startTime || null,
       endTime: endTime || null,
       weekdays: weekdays || null,

@@ -5,9 +5,10 @@ import {
   formatMonthISO,
   getMonthEnd,
   isSameDay,
+  makeDate,
   mondayIndex,
   parseYearParam,
-  toDateOnly,
+  todayInSeoul,
   weekdayLabel,
 } from "@/lib/task-utils";
 import { computeAchievements, computeStreaks } from "@/lib/gamification";
@@ -40,16 +41,16 @@ export default async function YearPage({ searchParams }: PageProps) {
     include: { completions: true },
   });
 
-  const today = toDateOnly(new Date());
+  const today = todayInSeoul();
   const { current: streak, longest } = computeStreaks(tasks, today);
   const achievements = computeAchievements(tasks, today);
 
   const months = Array.from({ length: 12 }, (_, m) => {
-    const monthStart = new Date(year, m, 1);
+    const monthStart = makeDate(year, m, 1);
     const days = Array.from(
-      { length: getMonthEnd(monthStart).getDate() },
+      { length: getMonthEnd(monthStart).getUTCDate() },
       (_, i) => {
-        const date = new Date(year, m, i + 1);
+        const date = makeDate(year, m, i + 1);
         const future = date > today;
         const { items, done } = daySummary(tasks, date);
         return {
@@ -118,7 +119,7 @@ export default async function YearPage({ searchParams }: PageProps) {
               href={`/month?month=${formatMonthISO(monthStart)}`}
               className="text-sm font-bold hover:text-dated-ink"
             >
-              {monthStart.getMonth() + 1}월
+              {monthStart.getUTCMonth() + 1}월
             </Link>
 
             <div className="mt-2 grid max-w-[168px] grid-cols-7 gap-1">
@@ -138,7 +139,7 @@ export default async function YearPage({ searchParams }: PageProps) {
               {days.map(({ date, total, done, future }) => (
                 <span
                   key={date.toISOString()}
-                  title={`${date.getMonth() + 1}월 ${date.getDate()}일 · ${
+                  title={`${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일 · ${
                     future
                       ? "예정"
                       : total === 0
