@@ -20,6 +20,19 @@ function formatToday(d: Date) {
   });
 }
 
+function SectionHeading({ title, count }: { title: string; count: number }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <h2 className="text-xs font-bold tracking-wide text-ink-faint">{title}</h2>
+      {count > 0 && (
+        <span className="text-xs font-semibold tabular-nums text-ink-faint/80">
+          {count}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default async function Home() {
   const tasks = await prisma.task.findMany({
     where: { archived: false },
@@ -70,32 +83,56 @@ export default async function Home() {
     done: t.completions.length > 0,
   });
 
-  const capacityPct = capacityPercent([...routines, ...dated]);
+  const scheduled = [...dated, ...routines];
+  const doneCount =
+    dated.filter((t) => toDatedItem(t).done).length +
+    routines.filter((t) => toRoutineItem(t).done).length;
+  const donePct =
+    scheduled.length === 0
+      ? 0
+      : Math.round((doneCount / scheduled.length) * 100);
+  const capacityPct = capacityPercent(scheduled);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 pt-4 pb-10 sm:px-6">
-      <header className="flex items-baseline justify-between gap-4">
-        <div>
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-7 px-4 pt-5 pb-10 sm:px-6">
+      <section className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <div className="min-w-0">
           <h1 className="text-2xl font-extrabold tracking-tight text-balance">
             오늘
           </h1>
           <p className="mt-1 text-sm text-ink-soft">{formatToday(today)}</p>
+          <p className="mt-3 text-xs text-ink-faint">
+            일정 {scheduled.length}건 · 하루의{" "}
+            <span className="font-semibold tabular-nums">{capacityPct}%</span>가
+            채워졌어요
+          </p>
         </div>
-        <div className="text-right text-xs text-ink-faint">
-          <div className="text-sm font-semibold tabular-nums text-foreground">
-            {capacityPct}%
+
+        <div className="relative grid h-[76px] w-[76px] flex-none place-items-center">
+          <div
+            aria-hidden
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `conic-gradient(var(--dated) ${donePct}%, var(--surface-sunk) 0)`,
+            }}
+          />
+          <div aria-hidden className="absolute inset-[7px] rounded-full bg-surface" />
+          <div className="relative text-center leading-none">
+            <div className="text-[15px] font-extrabold tabular-nums">
+              {donePct}%
+            </div>
+            <div className="mt-0.5 text-[10px] tabular-nums text-ink-faint">
+              {doneCount}/{scheduled.length}
+            </div>
           </div>
-          오늘 여유
         </div>
-      </header>
+      </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-bold tracking-wide text-ink-faint">
-          오늘 할 일
-        </h2>
+        <SectionHeading title="오늘 할 일" count={dated.length} />
         <div className="flex flex-col gap-1.5">
           {dated.length === 0 && (
-            <p className="px-3 py-2 text-sm text-ink-faint">
+            <p className="rounded-lg border border-dashed border-border px-3 py-3 text-sm text-ink-faint">
               오늘 예정된 할 일이 없어요.
             </p>
           )}
@@ -106,12 +143,10 @@ export default async function Home() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-bold tracking-wide text-ink-faint">
-          정기 루틴
-        </h2>
+        <SectionHeading title="정기 루틴" count={routines.length} />
         <div className="flex flex-col gap-1.5">
           {routines.length === 0 && (
-            <p className="px-3 py-2 text-sm text-ink-faint">
+            <p className="rounded-lg border border-dashed border-border px-3 py-3 text-sm text-ink-faint">
               오늘 해당하는 루틴이 없어요.
             </p>
           )}
@@ -122,12 +157,10 @@ export default async function Home() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-bold tracking-wide text-ink-faint">
-          미배치함 · 언젠가 할 일
-        </h2>
+        <SectionHeading title="미배치함 · 언젠가 할 일" count={floating.length} />
         <div className="flex flex-wrap gap-1.5">
           {floating.length === 0 && (
-            <p className="px-3 py-2 text-sm text-ink-faint">
+            <p className="w-full rounded-lg border border-dashed border-border px-3 py-3 text-sm text-ink-faint">
               쌓아둔 할 일이 없어요.
             </p>
           )}
@@ -141,10 +174,9 @@ export default async function Home() {
         <AddTaskForm />
       </section>
 
-      <footer className="mt-auto pt-6 text-center text-[11px] text-ink-faint">
+      <footer className="mt-auto pt-4 text-center text-[11px] text-ink-faint">
         빗금 = 반복 루틴 · 실선 = 날짜 있는 할 일 · 점선 = 언젠가 할 일
       </footer>
     </div>
   );
 }
-

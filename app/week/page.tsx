@@ -4,6 +4,7 @@ import {
   addDays,
   capacityPercent,
   formatDateISO,
+  getMonthStart,
   getWeekStart,
   GRID_END_HOUR,
   GRID_START_HOUR,
@@ -17,6 +18,8 @@ import {
 import TaskBlock from "@/app/components/task-block";
 import TaskItem, { type TaskItemData } from "@/app/components/task-item";
 import DayAssignPicker from "@/app/components/day-assign-picker";
+import MiniMonth from "@/app/components/mini-month";
+import NowLine from "@/app/components/now-line";
 
 export const dynamic = "force-dynamic";
 
@@ -106,10 +109,15 @@ export default async function WeekPage({ searchParams }: PageProps) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 pt-4 pb-10 sm:px-6">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-2xl font-extrabold tracking-tight text-balance">
-          이번 주
-        </h1>
-        <div className="flex items-center gap-2 text-sm tabular-nums text-ink-soft">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-balance">
+            주간 시간표
+          </h1>
+          <p className="mt-1 text-sm tabular-nums text-ink-soft">
+            {formatRange(weekStart, weekEnd)}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-ink-soft">
           <Link
             href={`/week?week=${formatDateISO(addDays(weekStart, -7))}`}
             aria-label="이전 주"
@@ -117,7 +125,12 @@ export default async function WeekPage({ searchParams }: PageProps) {
           >
             ‹
           </Link>
-          <span>{formatRange(weekStart, weekEnd)}</span>
+          <Link
+            href="/week"
+            className="rounded-md border border-border px-2 py-1 text-xs hover:border-border-strong"
+          >
+            이번 주
+          </Link>
           <Link
             href={`/week?week=${formatDateISO(addDays(weekStart, 7))}`}
             aria-label="다음 주"
@@ -129,6 +142,12 @@ export default async function WeekPage({ searchParams }: PageProps) {
       </header>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[220px_1fr] lg:items-start">
+        <div className="flex flex-col gap-4">
+        <MiniMonth
+          monthStart={getMonthStart(weekStart)}
+          weekStart={weekStart}
+          today={toDateOnly(new Date())}
+        />
         <aside className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3 shadow-sm">
           <h2 className="text-xs font-bold tracking-wide text-ink-faint">
             미배치함
@@ -150,6 +169,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
             </div>
           )}
         </aside>
+        </div>
 
         <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
           <div className="min-w-[760px]">
@@ -248,6 +268,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
                         "repeating-linear-gradient(to bottom, transparent 0, transparent 49px, var(--surface-sunk) 49px, var(--surface-sunk) 50px)",
                     }}
                   >
+                    {isToday && <NowLine pxPerMinute={PX_PER_MINUTE} />}
                     {timedEvents.map(({ task: t, kind, start, end, col, cols }) => (
                       <TaskBlock
                         key={t.id}

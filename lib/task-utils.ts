@@ -102,6 +102,76 @@ export function addDays(date: Date, n: number): Date {
   return d;
 }
 
+// Minimal shape the calendar views need; keeps this module free of Prisma types.
+export type ScheduledTask = {
+  dueDate: Date | null;
+  weekdays: string | null;
+  completions: { date: Date }[];
+};
+
+export function occursOn(task: ScheduledTask, date: Date): boolean {
+  if (task.weekdays) return routineOccursOn(task.weekdays, date);
+  if (task.dueDate) return isSameDay(new Date(task.dueDate), date);
+  return false; // floating tasks aren't on the calendar until they get a date
+}
+
+export function isDoneOn(task: ScheduledTask, date: Date): boolean {
+  return task.completions.some((c) => isSameDay(new Date(c.date), date));
+}
+
+export function daySummary<T extends ScheduledTask>(tasks: T[], date: Date) {
+  const items = tasks.filter((t) => occursOn(t, date));
+  return { items, done: items.filter((t) => isDoneOn(t, date)).length };
+}
+
+export function getMonthStart(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+export function getMonthEnd(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+export function addMonths(date: Date, n: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + n, 1);
+}
+
+// Days of the printed month grid: whole weeks (Mon-start) covering the month.
+export function getMonthGrid(monthStart: Date): Date[] {
+  const monthEnd = getMonthEnd(monthStart);
+  const days: Date[] = [];
+  let cursor = getWeekStart(monthStart);
+  while (cursor <= monthEnd || days.length % 7 !== 0) {
+    days.push(cursor);
+    cursor = addDays(cursor, 1);
+  }
+  return days;
+}
+
+// Weekday index with Monday as 0, matching the grid column order.
+export function mondayIndex(date: Date): number {
+  return (date.getDay() + 6) % 7;
+}
+
+export function formatMonthISO(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// Parses ?month=YYYY-MM as a local date; falls back to today when absent or malformed.
+export function parseMonthParam(month: string | undefined): Date {
+  if (month) {
+    const parsed = new Date(`${month}-01T00:00:00`);
+    if (!Number.isNaN(parsed.getTime())) return getMonthStart(parsed);
+  }
+  return getMonthStart(new Date());
+}
+
+export function parseYearParam(year: string | undefined): number {
+  const parsed = Number(year);
+  if (Number.isInteger(parsed) && parsed >= 1970 && parsed <= 9999) return parsed;
+  return new Date().getFullYear();
+}
+
 // Assigns side-by-side columns to time-overlapping items (classic day-view
 // calendar layout: greedy column packing within each collision cluster).
 export function layoutOverlaps<T>(

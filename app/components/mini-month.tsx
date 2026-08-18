@@ -1,0 +1,65 @@
+import Link from "next/link";
+import {
+  addDays,
+  formatDateISO,
+  getMonthGrid,
+  isSameDay,
+  weekdayLabel,
+} from "@/lib/task-utils";
+
+// Compact month for orientation in the weekly view: shows where the displayed
+// week sits in the month and jumps to any other week.
+export default function MiniMonth({
+  monthStart,
+  weekStart,
+  today,
+}: {
+  monthStart: Date;
+  weekStart: Date;
+  today: Date;
+}) {
+  const grid = getMonthGrid(monthStart);
+  const weekEnd = addDays(weekStart, 6);
+
+  return (
+    <section className="rounded-xl border border-border bg-surface p-3 shadow-sm">
+      <h2 className="text-xs font-bold tracking-wide">
+        {monthStart.toLocaleDateString("ko-KR", {
+          year: "numeric",
+          month: "long",
+        })}
+      </h2>
+
+      <div className="mt-2 grid grid-cols-7 gap-y-1">
+        {Array.from({ length: 7 }, (_, i) => (
+          <span
+            key={i}
+            className="text-center text-[9px] font-semibold text-ink-faint"
+          >
+            {weekdayLabel((i + 1) % 7)}
+          </span>
+        ))}
+
+        {grid.map((date) => {
+          const inWeek = date >= weekStart && date <= weekEnd;
+          const inMonth = date.getMonth() === monthStart.getMonth();
+          const isToday = isSameDay(date, today);
+
+          return (
+            <Link
+              key={date.toISOString()}
+              href={`/week?week=${formatDateISO(date)}`}
+              className={`grid aspect-square place-items-center rounded-md text-[10px] font-semibold tabular-nums transition-colors ${
+                inWeek ? "bg-dated-soft text-dated-ink" : "hover:bg-surface-sunk"
+              } ${inMonth ? "" : "opacity-35"} ${
+                isToday ? "ring-1 ring-dated" : ""
+              }`}
+            >
+              {date.getDate()}
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
