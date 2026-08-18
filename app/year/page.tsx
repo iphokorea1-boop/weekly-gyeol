@@ -117,7 +117,7 @@ export default async function YearPage({ searchParams }: PageProps) {
           >
             <Link
               href={`/month?month=${formatMonthISO(monthStart)}`}
-              className="text-sm font-bold hover:text-dated-ink"
+              className="pressable text-sm font-bold hover:text-dated-ink"
             >
               {monthStart.getUTCMonth() + 1}월
             </Link>

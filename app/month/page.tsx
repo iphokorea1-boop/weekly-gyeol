@@ -121,7 +121,7 @@ export default async function MonthPage({ searchParams }: PageProps) {
                   <Link
                     key={date.toISOString()}
                     href={`/week?week=${formatDateISO(date)}`}
-                    className={`flex min-h-[104px] flex-col gap-1 border-r border-border p-1.5 transition-colors last:border-r-0 hover:bg-surface-sunk ${
+                    className={`pressable press-soft flex min-h-[104px] min-w-0 flex-col gap-1 border-r border-border p-1.5 last:border-r-0 hover:bg-surface-sunk ${
                       inMonth ? "" : "opacity-45"
                     } ${isToday ? "bg-dated-soft/40" : ""}`}
                   >

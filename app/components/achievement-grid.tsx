@@ -23,7 +23,7 @@ export default function AchievementGrid({
           <div
             key={a.id}
             className={cn(
-              "flex flex-col gap-1.5 rounded-xl border p-3 transition-colors",
+              "flex flex-col gap-1.5 rounded-xl border p-3 transition-all duration-300 ease-[var(--ease-smooth)] hover:-translate-y-0.5 hover:shadow-sm",
               a.earned
                 ? "border-routine-line bg-routine-soft text-routine-ink"
                 : "border-border bg-surface text-ink-soft"
@@ -41,7 +41,7 @@ export default function AchievementGrid({
             {!a.earned && a.progress > 0 && (
               <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-surface-sunk">
                 <span
-                  className="block h-full rounded-full bg-dated"
+                  className="block h-full rounded-full bg-dated transition-[width] duration-700 ease-[var(--ease-smooth)]"
                   style={{ width: `${Math.round(a.progress * 100)}%` }}
                 />
               </div>

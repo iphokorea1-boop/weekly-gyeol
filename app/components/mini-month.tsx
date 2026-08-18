@@ -23,7 +23,10 @@ export default function MiniMonth({
   const weekEnd = addDays(weekStart, 6);
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-3 shadow-sm">
+    // Capped: below the lg breakpoint this drops out of its 248px column and
+    // would otherwise stretch edge to edge, blowing the aspect-square day cells
+    // up to a size that dwarfs the schedule it's meant to be a thumbnail of.
+    <section className="w-full max-w-[272px] rounded-xl border border-border bg-surface p-3 shadow-sm">
       <h2 className="text-xs font-bold tracking-wide">
         {formatKo(monthStart, { year: "numeric", month: "long" })}
       </h2>
@@ -47,7 +50,7 @@ export default function MiniMonth({
             <Link
               key={date.toISOString()}
               href={`/week?week=${formatDateISO(date)}`}
-              className={`grid aspect-square place-items-center rounded-md text-[10px] font-semibold tabular-nums transition-colors ${
+              className={`pressable press-deep grid aspect-square place-items-center rounded-md text-[10px] font-semibold tabular-nums ${
                 inWeek ? "bg-dated-soft text-dated-ink" : "hover:bg-surface-sunk"
               } ${inMonth ? "" : "opacity-35"} ${
                 isToday ? "ring-1 ring-dated" : ""

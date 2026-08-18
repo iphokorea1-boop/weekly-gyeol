@@ -166,6 +166,19 @@
   --font-sans: var(--font-geist-sans), -apple-system, "Apple SD Gothic Neo",
     "Malgun Gothic", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /*
+   * Two curves carry the whole interface.
+   *   smooth — a long decelerating tail. Motion arrives fast and settles
+   *            gently, which is what makes a transition feel unhurried
+   *            without feeling slow.
+   *   spring — the same, but overshooting ~6% before settling. Reserved for
+   *            things releasing back to rest, where a little bounce reads as
+   *            physical. Never used on colour or opacity, where an overshoot
+   *            has nothing to overshoot into.
+   */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.42, 0.64, 1);
 }
 
 @layer base {
@@ -174,45 +187,177 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Press feedback
+ *
+ * The press asymmetry is the whole trick: the scale-down runs in 90ms so the
+ * surface feels welded to the finger, while the release springs back over
+ * 400ms. Matching the two durations is what makes most web buttons feel wrong
+ * — equal timing reads as sluggish going down and mechanical coming up.
+ *
+ * Depth is inversely proportional to size. A 3% shrink is invisible on a 20px
+ * checkbox and violent on a full-width card, so large surfaces move less and
+ * small controls move more, which keeps the *apparent* travel constant.
+ *
+ * These rules are deliberately unlayered so they win over Tailwind's utility
+ * layer without needing !important; `transition` here is the complete
+ * declaration for anything carrying .pressable.
+ */
+.pressable {
+  --press-scale: 0.97;
+  touch-action: manipulation; /* drops the 300ms tap delay on mobile */
+  -webkit-tap-highlight-color: transparent; /* no grey flash over our own feedback */
+  transition:
+    scale 400ms var(--ease-spring),
+    translate 400ms var(--ease-spring),
+    box-shadow 300ms var(--ease-smooth),
+    background-color 220ms var(--ease-smooth),
+    border-color 220ms var(--ease-smooth),
+    color 220ms var(--ease-smooth),
+    opacity 220ms var(--ease-smooth);
+}
+
+.pressable:active {
+  scale: var(--press-scale);
+  transition-duration: 90ms;
+}
+
+/* Small controls: checkboxes, icon buttons, weekday pills. */
+.press-deep {
+  --press-scale: 0.88;
+}
+
+/* Large surfaces: task rows, cards, calendar cells. */
+.press-soft {
+  --press-scale: 0.988;
+}
+
+/* ---------------------------------------------------------------------------
+ * Completion feedback
+ */
 
 /* The reward for checking something off: a short lift-and-fade. */
 @keyframes xp-burst {
   0% {
     opacity: 0;
-    transform: translateY(2px) scale(0.85);
+    translate: 0 2px;
+    scale: 0.8;
   }
-  25% {
+  22% {
     opacity: 1;
-    transform: translateY(-4px) scale(1);
+    translate: 0 -5px;
+    scale: 1.06;
+  }
+  38% {
+    scale: 1;
   }
   100% {
     opacity: 0;
-    transform: translateY(-18px) scale(1);
+    translate: 0 -22px;
+    scale: 1;
   }
 }
 
+/* Overshoot well past 1 and settle back — a plain scale-up reads as a resize,
+   the overshoot reads as something popping into place. */
 @keyframes check-pop {
-  50% {
-    transform: scale(1.28);
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.32;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* Draws the tick on rather than cutting to it. 30 comfortably exceeds the
+   path length of lucide's Check, so the line starts fully retracted. */
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 30;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* A ring that expands out of the checkbox and dissolves, so the confirmation
+   reads even when the tick itself is only 12px wide. */
+@keyframes ring-pulse {
+  0% {
+    opacity: 0.5;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 2.1;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
   }
 }
 
 .animate-xp-burst {
-  animation: xp-burst 900ms ease-out forwards;
+  animation: xp-burst 950ms var(--ease-smooth) forwards;
 }
 
 .animate-check-pop {
-  animation: check-pop 320ms ease-out;
+  animation: check-pop 420ms var(--ease-spring);
 }
 
+.animate-ring-pulse {
+  animation: ring-pulse 520ms var(--ease-smooth) forwards;
+}
+
+.animate-panel-in {
+  animation: panel-in 260ms var(--ease-smooth);
+}
+
+.check-draw path {
+  stroke-dasharray: 30;
+  animation: check-draw 300ms var(--ease-smooth) forwards;
+}
+
+/* ---------------------------------------------------------------------------
+ * Honour the OS setting. Feedback still has to *land* — state changes stay
+ * visible, they just stop moving — so the tick is drawn instantly rather than
+ * being left half-retracted by a cancelled animation.
+ */
 @media (prefers-reduced-motion: reduce) {
+  .pressable,
+  .pressable:active {
+    transition-duration: 1ms;
+    scale: 1;
+  }
   .animate-xp-burst,
-  .animate-check-pop {
+  .animate-check-pop,
+  .animate-ring-pulse,
+  .animate-panel-in,
+  .check-draw path {
     animation: none;
   }
-  .animate-xp-burst {
+  .check-draw path {
+    stroke-dashoffset: 0;
+  }
+  .animate-xp-burst,
+  .animate-ring-pulse {
     opacity: 0;
   }
 }
+

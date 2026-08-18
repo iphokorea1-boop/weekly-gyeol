@@ -30,7 +30,10 @@ export default function TaskBlock({
   col?: number;
   cols?: number;
 }) {
-  const { pending, toggle } = useTaskActions(task.id);
+  const { pending, done, celebrating, toggle } = useTaskActions(
+    task.id,
+    task.done
+  );
   const visuals = KIND_VISUALS[kind];
   const KindIcon = visuals.icon;
   const roomy = height >= 34;
@@ -47,32 +50,35 @@ export default function TaskBlock({
         width: `calc(${100 / cols}% - 6px)`,
       }}
       className={cn(
-        "group absolute overflow-hidden rounded-lg border py-1 pl-3 pr-1.5 text-left shadow-xs transition-all",
+        "pressable group absolute overflow-hidden rounded-lg border py-1 pl-3 pr-1.5 text-left shadow-xs",
         "hover:z-10 hover:shadow-md",
         visuals.surface,
         pending && "opacity-60",
-        task.done && "opacity-55"
+        done && "opacity-55"
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-1 left-1 w-[3px] rounded-full",
+          "absolute inset-y-1 left-1 w-[3px] rounded-full transition-opacity duration-300",
           visuals.rail,
-          task.done && "opacity-40"
+          done && "opacity-40"
         )}
       />
 
       <span className="flex items-center gap-1">
-        {task.done ? (
-          <Check className="h-3 w-3 flex-none" strokeWidth={3.5} />
+        {done ? (
+          <Check
+            className={cn("h-3 w-3 flex-none", celebrating && "check-draw")}
+            strokeWidth={3.5}
+          />
         ) : (
           <KindIcon className="h-3 w-3 flex-none opacity-70" strokeWidth={2.5} />
         )}
         <span
           className={cn(
             "truncate text-[11px] font-bold leading-tight",
-            task.done && "line-through"
+            done && "line-through"
           )}
         >
           {task.title}

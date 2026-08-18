@@ -20,7 +20,7 @@ export default function DayAssignPicker({
         type="button"
         onClick={() => setOpen(true)}
         disabled={pending}
-        className="text-[10px] font-semibold text-floating-ink underline decoration-dotted underline-offset-2 hover:opacity-70"
+        className="pressable text-[10px] font-semibold text-floating-ink underline decoration-dotted underline-offset-2 hover:opacity-70"
       >
         이 날로 옮기기
       </button>
@@ -28,14 +28,14 @@ export default function DayAssignPicker({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="animate-panel-in flex flex-wrap items-center gap-1">
       {weekDates.map((date) => (
         <button
           key={date.toISOString()}
           type="button"
           disabled={pending}
           onClick={() => assignToDate(date)}
-          className="grid h-5 w-5 place-items-center rounded-full border border-floating text-[10px] font-semibold text-floating-ink hover:bg-floating-soft"
+          className="pressable press-deep grid h-5 w-5 place-items-center rounded-full border border-floating text-[10px] font-semibold text-floating-ink hover:bg-floating-soft"
         >
           {weekdayLabel(weekdayOf(date))}
         </button>
@@ -43,7 +43,7 @@ export default function DayAssignPicker({
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="px-1 text-[10px] text-ink-faint hover:text-ink"
+        className="pressable px-1 text-[10px] text-ink-faint hover:text-ink"
         aria-label="취소"
       >
         ×

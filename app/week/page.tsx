@@ -213,7 +213,11 @@ export default async function WeekPage({ searchParams }: PageProps) {
               {days.map(({ date, allDayDated }) => (
                 <div
                   key={date.toISOString()}
-                  className="flex min-h-[34px] flex-col gap-1 border-r border-border p-1.5 last:border-r-0"
+                  // min-w-0: grid items default to min-width:auto, so a long
+                  // chip widens its own 1fr column and shoves the row out of
+                  // step with the header — making a task look like it sits on
+                  // the neighbouring day.
+                  className="flex min-h-[34px] min-w-0 flex-col gap-1 border-r border-border p-1.5 last:border-r-0"
                 >
                   {allDayDated.map((t) => (
                     <span

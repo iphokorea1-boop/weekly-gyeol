@@ -82,9 +82,13 @@ export default function AddTaskForm() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border-strong px-3.5 py-3 text-sm font-medium text-ink-soft transition-all hover:border-dated hover:bg-dated-soft hover:text-dated-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dated"
+        className="pressable group flex w-full items-center gap-2 rounded-xl border border-dashed border-border-strong px-3.5 py-3 text-sm font-medium text-ink-soft hover:border-dated hover:bg-dated-soft hover:text-dated-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dated"
       >
-        <Plus className="h-4 w-4" strokeWidth={2.5} />할 일 추가
+        <Plus
+          className="h-4 w-4 transition-[rotate] duration-300 ease-[var(--ease-spring)] group-hover:rotate-90"
+          strokeWidth={2.5}
+        />
+        할 일 추가
       </button>
     );
   }
@@ -92,7 +96,7 @@ export default function AddTaskForm() {
   return (
     <form
       onSubmit={submit}
-      className="flex flex-col gap-3.5 rounded-xl border border-border bg-surface p-4 shadow-sm"
+      className="animate-panel-in flex flex-col gap-3.5 rounded-xl border border-border bg-surface p-4 shadow-sm"
     >
       <input
         autoFocus
@@ -113,7 +117,7 @@ export default function AddTaskForm() {
               key={value}
               onClick={() => setKind(value)}
               className={cn(
-                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
+                "pressable press-deep flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold",
                 active
                   ? visuals.surface
                   : "border-border text-ink-soft hover:bg-surface-sunk"
@@ -143,7 +147,7 @@ export default function AddTaskForm() {
               key={w.value}
               onClick={() => toggleWeekday(w.value)}
               className={cn(
-                "h-9 w-9 rounded-full border text-xs font-bold transition-all",
+                "pressable press-deep h-9 w-9 rounded-full border text-xs font-bold",
                 weekdays.includes(w.value)
                   ? "border-routine-line bg-routine-soft text-routine-ink"
                   : "border-border text-ink-soft hover:bg-surface-sunk"
@@ -180,14 +184,14 @@ export default function AddTaskForm() {
             reset();
             setOpen(false);
           }}
-          className="rounded-lg px-3.5 py-2 font-medium text-ink-soft transition-colors hover:bg-surface-sunk"
+          className="pressable rounded-lg px-3.5 py-2 font-medium text-ink-soft hover:bg-surface-sunk"
         >
           취소
         </button>
         <button
           type="submit"
           disabled={submitting || !title.trim()}
-          className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:opacity-40"
+          className="pressable rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground shadow-sm hover:brightness-110 disabled:opacity-40"
         >
           추가
         </button>

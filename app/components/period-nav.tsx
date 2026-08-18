@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const arrowClass =
-  "grid h-8 w-8 place-items-center rounded-lg border border-border bg-surface text-ink-soft shadow-xs transition-all hover:border-border-strong hover:text-foreground";
+  "pressable press-deep grid h-8 w-8 place-items-center rounded-lg border border-border bg-surface text-ink-soft shadow-xs hover:border-border-strong hover:text-foreground";
 
 // Shared prev / "back to now" / next control used by the week, month and year views.
 export default function PeriodNav({
@@ -27,7 +27,7 @@ export default function PeriodNav({
       </Link>
       <Link
         href={currentHref}
-        className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink-soft shadow-xs transition-all hover:border-border-strong hover:text-foreground"
+        className="pressable rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink-soft shadow-xs hover:border-border-strong hover:text-foreground"
       >
         {currentLabel}
       </Link>

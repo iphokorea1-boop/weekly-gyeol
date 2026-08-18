@@ -34,7 +34,10 @@ export default function TaskItem({
   kind: TaskKind;
   extra?: ReactNode;
 }) {
-  const { pending, burst, toggle, remove } = useTaskActions(task.id);
+  const { pending, burst, done, celebrating, toggle, remove } = useTaskActions(
+    task.id,
+    task.done
+  );
   const visuals = KIND_VISUALS[kind];
   const KindIcon = visuals.icon;
   const meta = [task.weekdaysLabel, task.startTime && task.endTime
@@ -46,19 +49,19 @@ export default function TaskItem({
   return (
     <div
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-xl border py-2.5 pl-5 pr-2.5 shadow-xs transition-all",
+        "pressable press-soft group relative flex items-center gap-2.5 rounded-xl border py-2.5 pl-5 pr-2.5 shadow-xs",
         "hover:-translate-y-px hover:shadow-sm",
         visuals.surface,
         pending && "opacity-60",
-        task.done && "opacity-60"
+        done && "opacity-60"
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "absolute inset-y-2 left-1.5 w-1 rounded-full transition-opacity",
+          "absolute inset-y-2 left-1.5 w-1 rounded-full transition-opacity duration-300",
           visuals.rail,
-          task.done && "opacity-40"
+          done && "opacity-40"
         )}
       />
 
@@ -66,17 +69,31 @@ export default function TaskItem({
         <button
           type="button"
           onClick={() => toggle(task.occurrenceDate ?? new Date(), task.xp)}
-          aria-label={task.done ? "완료 취소" : "완료로 표시"}
-          aria-pressed={task.done}
+          aria-label={done ? "완료 취소" : "완료로 표시"}
+          aria-pressed={done}
           className={cn(
-            "grid h-5 w-5 place-items-center rounded-full border-2 transition-all",
+            "pressable press-deep grid h-5 w-5 place-items-center rounded-full border-2",
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
-            task.done ? cn("border-transparent", visuals.check) : visuals.checkIdle,
-            burst && "animate-check-pop"
+            done ? cn("border-transparent", visuals.check) : visuals.checkIdle,
+            celebrating && "animate-check-pop"
           )}
         >
-          {task.done && <Check className="h-3 w-3" strokeWidth={3.5} />}
+          {done && (
+            <Check
+              className={cn("h-3 w-3", celebrating && "check-draw")}
+              strokeWidth={3.5}
+            />
+          )}
         </button>
+        {celebrating && (
+          <span
+            aria-hidden
+            className={cn(
+              "animate-ring-pulse pointer-events-none absolute inset-0 rounded-full border-2",
+              visuals.checkIdle
+            )}
+          />
+        )}
         {burst && (
           <span
             aria-hidden
@@ -97,8 +114,8 @@ export default function TaskItem({
         <div className="flex items-center gap-1.5">
           <span
             className={cn(
-              "truncate text-sm font-semibold",
-              task.done && "line-through"
+              "truncate text-sm font-semibold transition-opacity duration-300",
+              done && "line-through"
             )}
           >
             {task.title}
@@ -122,7 +139,7 @@ export default function TaskItem({
         onClick={remove}
         aria-label="삭제"
         className={cn(
-          "flex-none rounded-md p-1 text-current opacity-0 transition-all",
+          "pressable press-deep flex-none rounded-md p-1 text-current opacity-0",
           "hover:bg-black/5 hover:text-destructive group-hover:opacity-60",
           "focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-current"
         )}

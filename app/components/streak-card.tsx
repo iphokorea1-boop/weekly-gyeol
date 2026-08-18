@@ -34,7 +34,7 @@ export default function StreakCard({
       <div className="flex flex-wrap items-center gap-4 p-5">
         <div
           className={cn(
-            "flex flex-none items-center gap-2 rounded-2xl px-4 py-3 transition-colors",
+            "flex flex-none items-center gap-2 rounded-2xl px-4 py-3 transition-colors duration-500 ease-[var(--ease-smooth)]",
             streak > 0
               ? "bg-routine-soft text-routine-ink"
               : "bg-surface-sunk text-ink-faint"
@@ -75,7 +75,7 @@ export default function StreakCard({
           </div>
           <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-sunk">
             <span
-              className="block h-full rounded-full bg-dated transition-[width] duration-500"
+              className="block h-full rounded-full bg-dated transition-[width] duration-700 ease-[var(--ease-smooth)]"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -92,7 +92,7 @@ export default function StreakCard({
               <span
                 key={i}
                 className={cn(
-                  "h-1.5 flex-1 rounded-full transition-colors",
+                  "h-1.5 flex-1 rounded-full transition-colors duration-300 ease-[var(--ease-smooth)]",
                   i < todayDone
                     ? "bg-floating"
                     : i < goalCount
