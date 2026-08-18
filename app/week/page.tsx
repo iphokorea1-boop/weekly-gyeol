@@ -14,6 +14,7 @@ import {
   taskKind,
   toDateOnly,
 } from "@/lib/task-utils";
+import { xpFor } from "@/lib/gamification";
 import TaskBlock from "@/app/components/task-block";
 import TaskItem, { type TaskItemData } from "@/app/components/task-item";
 import DayAssignPicker from "@/app/components/day-assign-picker";
@@ -105,6 +106,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
     startTime: null,
     endTime: null,
     done: t.completions.length > 0,
+    xp: xpFor(t.priority),
   });
 
   return (

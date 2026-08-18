@@ -7,9 +7,11 @@ import {
   taskKind,
   toDateOnly,
 } from "@/lib/task-utils";
+import { computeStreaks, totalXp, xpFor } from "@/lib/gamification";
 import TaskItem, { type TaskItemData } from "@/app/components/task-item";
 import AddTaskForm from "@/app/components/add-task-form";
 import KindLegend from "@/app/components/kind-legend";
+import StreakCard from "@/app/components/streak-card";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +63,7 @@ export default async function Home() {
       endTime: t.endTime,
       weekdaysLabel: days < 7 ? formatWeekdays(t.weekdays) : undefined,
       done: t.completions.some((c) => isSameDay(new Date(c.date), today)),
+      xp: xpFor(t.priority),
     };
   };
 
@@ -72,6 +75,8 @@ export default async function Home() {
       startTime: t.startTime,
       endTime: t.endTime,
       done: t.completions.some((c) => isSameDay(new Date(c.date), due)),
+      xp: xpFor(t.priority),
+      occurrenceDate: due,
       overdue: toDateOnly(due) < today,
     };
   };
@@ -82,6 +87,7 @@ export default async function Home() {
     startTime: null,
     endTime: null,
     done: t.completions.length > 0,
+    xp: xpFor(t.priority),
   });
 
   const scheduled = [...dated, ...routines];
@@ -93,41 +99,35 @@ export default async function Home() {
       ? 0
       : Math.round((doneCount / scheduled.length) * 100);
   const capacityPct = capacityPercent(scheduled);
+  const { current: streak, longest } = computeStreaks(tasks, today);
+  const xp = totalXp(tasks);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-7 px-4 pt-5 pb-10 sm:px-6">
-      <section className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+      <header className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-extrabold tracking-tight text-balance">
             오늘
           </h1>
           <p className="mt-1 text-sm text-ink-soft">{formatToday(today)}</p>
-          <p className="mt-3 text-xs text-ink-faint">
-            일정 {scheduled.length}건 · 하루의{" "}
-            <span className="font-semibold tabular-nums">{capacityPct}%</span>가
-            채워졌어요
-          </p>
         </div>
+        <p className="flex-none text-right text-xs text-ink-faint">
+          <span className="font-semibold tabular-nums text-foreground">
+            {donePct}%
+          </span>{" "}
+          완료
+          <br />
+          하루의 {capacityPct}% 사용
+        </p>
+      </header>
 
-        <div className="relative grid h-[76px] w-[76px] flex-none place-items-center">
-          <div
-            aria-hidden
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: `conic-gradient(var(--dated) ${donePct}%, var(--surface-sunk) 0)`,
-            }}
-          />
-          <div aria-hidden className="absolute inset-[7px] rounded-full bg-surface" />
-          <div className="relative text-center leading-none">
-            <div className="text-[15px] font-extrabold tabular-nums">
-              {donePct}%
-            </div>
-            <div className="mt-0.5 text-[10px] tabular-nums text-ink-faint">
-              {doneCount}/{scheduled.length}
-            </div>
-          </div>
-        </div>
-      </section>
+      <StreakCard
+        streak={streak}
+        longest={longest}
+        xp={xp}
+        todayDone={doneCount}
+        todayTotal={scheduled.length}
+      />
 
       <section className="flex flex-col gap-2">
         <SectionHeading title="오늘 할 일" count={dated.length} />

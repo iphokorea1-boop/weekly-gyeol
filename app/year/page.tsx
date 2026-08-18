@@ -10,7 +10,9 @@ import {
   toDateOnly,
   weekdayLabel,
 } from "@/lib/task-utils";
+import { computeAchievements, computeStreaks } from "@/lib/gamification";
 import PeriodNav from "@/app/components/period-nav";
+import AchievementGrid from "@/app/components/achievement-grid";
 
 export const dynamic = "force-dynamic";
 
@@ -30,17 +32,17 @@ function heatBackground(total: number, done: number): string {
 export default async function YearPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const year = parseYearParam(params.year);
-  const yearStart = new Date(year, 0, 1);
-  const yearEnd = new Date(year, 11, 31);
 
+  // Achievements and streaks span the user's whole history, so completions are
+  // fetched unfiltered; the heatmap only ever asks about dates inside `year`.
   const tasks = await prisma.task.findMany({
     where: { archived: false },
-    include: {
-      completions: { where: { date: { gte: yearStart, lte: yearEnd } } },
-    },
+    include: { completions: true },
   });
 
   const today = toDateOnly(new Date());
+  const { current: streak, longest } = computeStreaks(tasks, today);
+  const achievements = computeAchievements(tasks, today);
 
   const months = Array.from({ length: 12 }, (_, m) => {
     const monthStart = new Date(year, m, 1);
@@ -88,6 +90,12 @@ export default async function YearPage({ searchParams }: PageProps) {
             <span className="font-semibold tabular-nums text-foreground">
               {yearRate}%
             </span>
+            {" · "}
+            연속{" "}
+            <span className="font-semibold tabular-nums text-foreground">
+              {streak}일
+            </span>
+            {longest > streak && ` (최장 ${longest}일)`}
           </p>
         </div>
         <PeriodNav
@@ -167,6 +175,8 @@ export default async function YearPage({ searchParams }: PageProps) {
         />
         <span>예정 · 일정 없음</span>
       </footer>
+
+      <AchievementGrid achievements={achievements} />
     </div>
   );
 }

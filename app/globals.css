@@ -176,3 +176,43 @@
     @apply bg-background text-foreground font-sans;
   }
 }
+
+/* The reward for checking something off: a short lift-and-fade. */
+@keyframes xp-burst {
+  0% {
+    opacity: 0;
+    transform: translateY(2px) scale(0.85);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(1);
+  }
+}
+
+@keyframes check-pop {
+  50% {
+    transform: scale(1.28);
+  }
+}
+
+.animate-xp-burst {
+  animation: xp-burst 900ms ease-out forwards;
+}
+
+.animate-check-pop {
+  animation: check-pop 320ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-xp-burst,
+  .animate-check-pop {
+    animation: none;
+  }
+  .animate-xp-burst {
+    opacity: 0;
+  }
+}

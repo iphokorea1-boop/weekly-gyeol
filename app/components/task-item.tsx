@@ -15,6 +15,14 @@ export type TaskItemData = {
   weekdaysLabel?: string;
   done: boolean;
   overdue?: boolean;
+  xp?: number;
+  /**
+   * Which day's occurrence the checkbox toggles. Dated tasks must record
+   * against their due date — recording an overdue task against today would
+   * write a completion the due-date lookup never finds, leaving it stuck
+   * unchecked. Routines and backlog items just use today.
+   */
+  occurrenceDate?: Date;
 };
 
 export default function TaskItem({
@@ -26,7 +34,7 @@ export default function TaskItem({
   kind: TaskKind;
   extra?: ReactNode;
 }) {
-  const { pending, toggle, remove } = useTaskActions(task.id);
+  const { pending, burst, toggle, remove } = useTaskActions(task.id);
   const visuals = KIND_VISUALS[kind];
   const KindIcon = visuals.icon;
   const meta = [task.weekdaysLabel, task.startTime && task.endTime
@@ -54,19 +62,30 @@ export default function TaskItem({
         )}
       />
 
-      <button
-        type="button"
-        onClick={() => toggle()}
-        aria-label={task.done ? "완료 취소" : "완료로 표시"}
-        aria-pressed={task.done}
-        className={cn(
-          "grid h-5 w-5 flex-none place-items-center rounded-full border-2 transition-all",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
-          task.done ? cn("border-transparent", visuals.check) : visuals.checkIdle
+      <div className="relative flex-none">
+        <button
+          type="button"
+          onClick={() => toggle(task.occurrenceDate ?? new Date(), task.xp)}
+          aria-label={task.done ? "완료 취소" : "완료로 표시"}
+          aria-pressed={task.done}
+          className={cn(
+            "grid h-5 w-5 place-items-center rounded-full border-2 transition-all",
+            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
+            task.done ? cn("border-transparent", visuals.check) : visuals.checkIdle,
+            burst && "animate-check-pop"
+          )}
+        >
+          {task.done && <Check className="h-3 w-3" strokeWidth={3.5} />}
+        </button>
+        {burst && (
+          <span
+            aria-hidden
+            className="animate-xp-burst pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 text-[11px] font-extrabold whitespace-nowrap"
+          >
+            +{burst}
+          </span>
         )}
-      >
-        {task.done && <Check className="h-3 w-3" strokeWidth={3.5} />}
-      </button>
+      </div>
 
       <KindIcon
         aria-label={visuals.label}

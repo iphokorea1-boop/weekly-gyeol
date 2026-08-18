@@ -6,14 +6,21 @@ import { useState } from "react";
 export function useTaskActions(taskId: string) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  // Non-null while the "+N XP" burst is on screen after a completion.
+  const [burst, setBurst] = useState<number | null>(null);
 
-  async function toggle(date: Date = new Date()) {
+  async function toggle(date: Date = new Date(), xp?: number) {
     setPending(true);
-    await fetch(`/api/tasks/${taskId}/complete`, {
+    const res = await fetch(`/api/tasks/${taskId}/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date: date.toISOString() }),
     });
+    const result = await res.json().catch(() => ({ completed: false }));
+    if (result.completed && xp) {
+      setBurst(xp);
+      setTimeout(() => setBurst(null), 900);
+    }
     router.refresh();
     setPending(false);
   }
@@ -35,5 +42,5 @@ export function useTaskActions(taskId: string) {
     setPending(false);
   }
 
-  return { pending, toggle, remove, assignToDate };
+  return { pending, burst, toggle, remove, assignToDate };
 }
