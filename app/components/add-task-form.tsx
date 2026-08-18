@@ -2,8 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { KIND_VISUALS } from "@/app/components/task-visuals";
 
 type Kind = "dated" | "routine" | "floating";
+
+const KINDS: Kind[] = ["dated", "routine", "floating"];
 
 const WEEKDAYS = [
   { value: 1, label: "월" },
@@ -22,6 +27,9 @@ function todayInputValue() {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
+
+const inputClass =
+  "rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-dated focus:ring-2 focus:ring-dated/25";
 
 export default function AddTaskForm() {
   const router = useRouter();
@@ -77,9 +85,9 @@ export default function AddTaskForm() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full rounded-lg border border-dashed border-border-strong px-3 py-2 text-left text-sm text-ink-faint transition-colors hover:border-dated hover:text-dated-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dated"
+        className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border-strong px-3.5 py-3 text-sm font-medium text-ink-soft transition-all hover:border-dated hover:bg-dated-soft hover:text-dated-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dated"
       >
-        + 할 일 추가
+        <Plus className="h-4 w-4" strokeWidth={2.5} />할 일 추가
       </button>
     );
   }
@@ -87,37 +95,38 @@ export default function AddTaskForm() {
   return (
     <form
       onSubmit={submit}
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3"
+      className="flex flex-col gap-3.5 rounded-xl border border-border bg-surface p-4 shadow-sm"
     >
       <input
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="무엇을 해야 하나요?"
-        className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-dated"
+        className={cn(inputClass, "text-[15px] font-medium")}
       />
 
-      <div className="flex gap-1.5 text-xs">
-        {(
-          [
-            ["dated", "날짜 있는 할 일"],
-            ["routine", "정기 루틴"],
-            ["floating", "언젠가 할 일"],
-          ] as [Kind, string][]
-        ).map(([value, label]) => (
-          <button
-            type="button"
-            key={value}
-            onClick={() => setKind(value)}
-            className={`rounded-full border px-2.5 py-1 transition-colors ${
-              kind === value
-                ? "border-dated bg-dated-soft text-dated-ink font-medium"
-                : "border-border text-ink-soft"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-1.5">
+        {KINDS.map((value) => {
+          const visuals = KIND_VISUALS[value];
+          const Icon = visuals.icon;
+          const active = kind === value;
+          return (
+            <button
+              type="button"
+              key={value}
+              onClick={() => setKind(value)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
+                active
+                  ? visuals.surface
+                  : "border-border text-ink-soft hover:bg-surface-sunk"
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+              {visuals.label}
+            </button>
+          );
+        })}
       </div>
 
       {kind === "dated" && (
@@ -125,22 +134,23 @@ export default function AddTaskForm() {
           type="date"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
-          className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-dated"
+          className={inputClass}
         />
       )}
 
       {kind === "routine" && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {WEEKDAYS.map((w) => (
             <button
               type="button"
               key={w.value}
               onClick={() => toggleWeekday(w.value)}
-              className={`h-7 w-7 rounded-full border text-xs transition-colors ${
+              className={cn(
+                "h-9 w-9 rounded-full border text-xs font-bold transition-all",
                 weekdays.includes(w.value)
-                  ? "border-routine bg-routine-soft text-routine-ink font-semibold"
-                  : "border-border text-ink-soft"
-              }`}
+                  ? "border-routine-line bg-routine-soft text-routine-ink"
+                  : "border-border text-ink-soft hover:bg-surface-sunk"
+              )}
             >
               {w.label}
             </button>
@@ -149,18 +159,19 @@ export default function AddTaskForm() {
       )}
 
       {kind !== "floating" && (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <input
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-dated"
+            className={cn(inputClass, "w-full tabular-nums")}
           />
+          <span className="text-ink-faint">–</span>
           <input
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-dated"
+            className={cn(inputClass, "w-full tabular-nums")}
           />
         </div>
       )}
@@ -172,14 +183,14 @@ export default function AddTaskForm() {
             reset();
             setOpen(false);
           }}
-          className="rounded-md px-3 py-1.5 text-ink-soft hover:bg-surface-sunk"
+          className="rounded-lg px-3.5 py-2 font-medium text-ink-soft transition-colors hover:bg-surface-sunk"
         >
           취소
         </button>
         <button
           type="submit"
           disabled={submitting || !title.trim()}
-          className="rounded-md bg-dated px-3 py-1.5 font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:opacity-40"
         >
           추가
         </button>

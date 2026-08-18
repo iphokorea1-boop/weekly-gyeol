@@ -1,24 +1,122 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Palette: Radix Colors (@radix-ui/colors), whose 12-step scales are tuned for
+ * contrast at each role — 1-2 page, 3-5 component fills, 6-8 borders,
+ * 9-10 solid, 11-12 text.
+ *   sand   → neutrals
+ *   bronze → 정기 루틴 — routines outnumber everything else, so they get the
+ *            quietest hue; a vivid one turns the week grid into a highlighter
+ *   indigo → 날짜 있는 할 일 — the appointments that actually need attention
+ *   teal   → 언젠가 할 일
+ * shadcn's tokens are driven from the same values so its components inherit
+ * the theme instead of carrying a second palette.
+ */
 :root {
-  --background: #eef1f2;
-  --foreground: #1f2933;
-  --surface: #ffffff;
-  --surface-sunk: #e4e8e7;
-  --ink-soft: #4a5560;
-  --ink-faint: #667079;
-  --border: #d6dbd9;
-  --border-strong: #b7c0bc;
+  --radius: 0.75rem;
 
-  --routine: #b0542f;
-  --routine-ink: #7a3a1f;
-  --routine-soft: #f1dbcc;
-  --dated: #33447f;
-  --dated-ink: #263467;
-  --dated-soft: #dbe0f1;
-  --floating: #43705a;
-  --floating-ink: #2e5140;
-  --floating-soft: #dceae1;
+  --background: #f1f0ef; /* sand-3 */
+  --foreground: #21201c; /* sand-12 */
+  --surface: #fdfdfc; /* sand-1 */
+  --surface-sunk: #e9e8e6; /* sand-4 */
+  --ink-soft: #63635e; /* sand-11 */
+  --ink-faint: #82827c; /* sand-10 */
+  --border: #dad9d6; /* sand-6 */
+  --border-strong: #bcbbb5; /* sand-8 */
+
+  --routine: #a18072; /* bronze-9  */
+  --routine-ink: #7d5e54; /* bronze-11 */
+  --routine-soft: #f6edea; /* bronze-3  */
+  --routine-line: #d3bcb3; /* bronze-7  */
+
+  --dated: #3e63dd; /* indigo-9  */
+  --dated-ink: #3a5bc7; /* indigo-11 */
+  --dated-soft: #edf2fe; /* indigo-3  */
+  --dated-line: #abbdf9; /* indigo-7  */
+
+  --floating: #12a594; /* teal-9  */
+  --floating-ink: #008573; /* teal-11 */
+  --floating-soft: #e0f8f3; /* teal-3  */
+  --floating-line: #83cdc1; /* teal-7  */
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary: var(--dated);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-sunk);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-sunk);
+  --muted-foreground: var(--ink-soft);
+  --accent: var(--surface-sunk);
+  --accent-foreground: var(--foreground);
+  --destructive: #e5484d; /* red-9 */
+  --input: var(--border);
+  --ring: var(--dated);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #111110; /* sand-1 dark  */
+    --foreground: #eeeeec; /* sand-12 dark */
+    --surface: #191918; /* sand-2 dark  */
+    --surface-sunk: #222221; /* sand-3 dark  */
+    --ink-soft: #b5b3ad; /* sand-11 dark */
+    --ink-faint: #7c7b74; /* sand-10 dark */
+    --border: #3b3a37; /* sand-6 dark  */
+    --border-strong: #62605b; /* sand-8 dark  */
+
+    --routine: #a18072;
+    --routine-ink: #d4b3a5;
+    --routine-soft: #262220;
+    --routine-line: #5a4c47;
+
+    --dated: #3e63dd;
+    --dated-ink: #9eb1ff;
+    --dated-soft: #182449;
+    --dated-line: #3a4f97;
+
+    --floating: #12a594;
+    --floating-ink: #0bd8b6;
+    --floating-soft: #0d2d2a;
+    --floating-line: #1c6961;
+
+    --primary-foreground: #ffffff;
+    --destructive: #ff6369;
+  }
+}
+
+.dark {
+  --background: #111110;
+  --foreground: #eeeeec;
+  --surface: #191918;
+  --surface-sunk: #222221;
+  --ink-soft: #b5b3ad;
+  --ink-faint: #7c7b74;
+  --border: #3b3a37;
+  --border-strong: #62605b;
+
+  --routine: #a18072;
+  --routine-ink: #d4b3a5;
+  --routine-soft: #262220;
+  --routine-line: #5a4c47;
+
+  --dated: #3e63dd;
+  --dated-ink: #9eb1ff;
+  --dated-soft: #182449;
+  --dated-line: #3a4f97;
+
+  --floating: #12a594;
+  --floating-ink: #0bd8b6;
+  --floating-soft: #0d2d2a;
+  --floating-line: #1c6961;
+
+  --primary-foreground: #ffffff;
+  --destructive: #ff6369;
 }
 
 @theme inline {
@@ -30,45 +128,51 @@
   --color-ink-faint: var(--ink-faint);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+
   --color-routine: var(--routine);
   --color-routine-ink: var(--routine-ink);
   --color-routine-soft: var(--routine-soft);
+  --color-routine-line: var(--routine-line);
   --color-dated: var(--dated);
   --color-dated-ink: var(--dated-ink);
   --color-dated-soft: var(--dated-soft);
+  --color-dated-line: var(--dated-line);
   --color-floating: var(--floating);
   --color-floating-ink: var(--floating-ink);
   --color-floating-soft: var(--floating-soft);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-floating-line: var(--floating-line);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #131a1f;
-    --foreground: #e8e9e3;
-    --surface: #1b242b;
-    --surface-sunk: #0f1519;
-    --ink-soft: #aab4b8;
-    --ink-faint: #7e8a90;
-    --border: #2a343a;
-    --border-strong: #45525a;
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-    --routine: #e08a5c;
-    --routine-ink: #f3c6a8;
-    --routine-soft: rgba(224, 138, 92, 0.16);
-    --dated: #8a9be0;
-    --dated-ink: #c2cbf2;
-    --dated-soft: rgba(138, 155, 224, 0.16);
-    --floating: #7fbe93;
-    --floating-ink: #bfe4cb;
-    --floating-soft: rgba(127, 190, 147, 0.16);
-  }
-}
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), -apple-system, "Apple SD Gothic Neo",
+  --font-sans: var(--font-geist-sans), -apple-system, "Apple SD Gothic Neo",
     "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
 }

@@ -10,6 +10,7 @@ import {
   toDateOnly,
   weekdayLabel,
 } from "@/lib/task-utils";
+import PeriodNav from "@/app/components/period-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -89,28 +90,14 @@ export default async function YearPage({ searchParams }: PageProps) {
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-ink-soft">
-          <Link
-            href={`/year?year=${year - 1}`}
-            aria-label="이전 해"
-            className="grid h-7 w-7 place-items-center rounded-md border border-border hover:border-border-strong"
-          >
-            ‹
-          </Link>
-          <Link
-            href="/year"
-            className="rounded-md border border-border px-2 py-1 text-xs hover:border-border-strong"
-          >
-            올해
-          </Link>
-          <Link
-            href={`/year?year=${year + 1}`}
-            aria-label="다음 해"
-            className="grid h-7 w-7 place-items-center rounded-md border border-border hover:border-border-strong"
-          >
-            ›
-          </Link>
-        </div>
+        <PeriodNav
+          prevHref={`/year?year=${year - 1}`}
+          nextHref={`/year?year=${year + 1}`}
+          currentHref="/year"
+          currentLabel="올해"
+          prevLabel="이전 해"
+          nextLabel="다음 해"
+        />
       </header>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

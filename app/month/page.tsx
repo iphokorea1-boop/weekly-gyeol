@@ -14,6 +14,7 @@ import {
   toDateOnly,
   weekdayLabel,
 } from "@/lib/task-utils";
+import PeriodNav from "@/app/components/period-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -72,28 +73,14 @@ export default async function MonthPage({ searchParams }: PageProps) {
             완료
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-ink-soft">
-          <Link
-            href={`/month?month=${formatMonthISO(addMonths(monthStart, -1))}`}
-            aria-label="이전 달"
-            className="grid h-7 w-7 place-items-center rounded-md border border-border hover:border-border-strong"
-          >
-            ‹
-          </Link>
-          <Link
-            href="/month"
-            className="rounded-md border border-border px-2 py-1 text-xs hover:border-border-strong"
-          >
-            이번 달
-          </Link>
-          <Link
-            href={`/month?month=${formatMonthISO(addMonths(monthStart, 1))}`}
-            aria-label="다음 달"
-            className="grid h-7 w-7 place-items-center rounded-md border border-border hover:border-border-strong"
-          >
-            ›
-          </Link>
-        </div>
+        <PeriodNav
+          prevHref={`/month?month=${formatMonthISO(addMonths(monthStart, -1))}`}
+          nextHref={`/month?month=${formatMonthISO(addMonths(monthStart, 1))}`}
+          currentHref="/month"
+          currentLabel="이번 달"
+          prevLabel="이전 달"
+          nextLabel="다음 달"
+        />
       </header>
 
       <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">

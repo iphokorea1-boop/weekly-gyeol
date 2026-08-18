@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import {
   addDays,
@@ -19,6 +18,8 @@ import TaskBlock from "@/app/components/task-block";
 import TaskItem, { type TaskItemData } from "@/app/components/task-item";
 import DayAssignPicker from "@/app/components/day-assign-picker";
 import MiniMonth from "@/app/components/mini-month";
+import PeriodNav from "@/app/components/period-nav";
+import KindLegend from "@/app/components/kind-legend";
 import NowLine from "@/app/components/now-line";
 
 export const dynamic = "force-dynamic";
@@ -117,31 +118,17 @@ export default async function WeekPage({ searchParams }: PageProps) {
             {formatRange(weekStart, weekEnd)}
           </p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-ink-soft">
-          <Link
-            href={`/week?week=${formatDateISO(addDays(weekStart, -7))}`}
-            aria-label="이전 주"
-            className="grid h-7 w-7 place-items-center rounded-md border border-border hover:border-border-strong"
-          >
-            ‹
-          </Link>
-          <Link
-            href="/week"
-            className="rounded-md border border-border px-2 py-1 text-xs hover:border-border-strong"
-          >
-            이번 주
-          </Link>
-          <Link
-            href={`/week?week=${formatDateISO(addDays(weekStart, 7))}`}
-            aria-label="다음 주"
-            className="grid h-7 w-7 place-items-center rounded-md border border-border hover:border-border-strong"
-          >
-            ›
-          </Link>
-        </div>
+        <PeriodNav
+          prevHref={`/week?week=${formatDateISO(addDays(weekStart, -7))}`}
+          nextHref={`/week?week=${formatDateISO(addDays(weekStart, 7))}`}
+          currentHref="/week"
+          currentLabel="이번 주"
+          prevLabel="이전 주"
+          nextLabel="다음 주"
+        />
       </header>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[220px_1fr] lg:items-start">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[248px_1fr] lg:items-start">
         <div className="flex flex-col gap-4">
         <MiniMonth
           monthStart={getMonthStart(weekStart)}
@@ -295,9 +282,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      <footer className="text-center text-[11px] text-ink-faint">
-        빗금 = 반복 루틴 · 실선 = 날짜 있는 할 일 · 점선 = 언젠가 할 일
-      </footer>
+      <KindLegend />
     </div>
   );
 }

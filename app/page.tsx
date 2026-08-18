@@ -9,6 +9,7 @@ import {
 } from "@/lib/task-utils";
 import TaskItem, { type TaskItemData } from "@/app/components/task-item";
 import AddTaskForm from "@/app/components/add-task-form";
+import KindLegend from "@/app/components/kind-legend";
 
 export const dynamic = "force-dynamic";
 
@@ -174,9 +175,7 @@ export default async function Home() {
         <AddTaskForm />
       </section>
 
-      <footer className="mt-auto pt-4 text-center text-[11px] text-ink-faint">
-        빗금 = 반복 루틴 · 실선 = 날짜 있는 할 일 · 점선 = 언젠가 할 일
-      </footer>
+      <KindLegend className="mt-auto pt-4" />
     </div>
   );
 }
