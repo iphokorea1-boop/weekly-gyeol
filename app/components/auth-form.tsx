@@ -70,7 +70,10 @@ export default function AuthForm() {
             name="email"
             type="email"
             required
-            autoComplete="email"
+            // "username", not "email": password managers pair the credential on
+            // this token, so it is what makes a saved login offer itself back
+            // on the next visit. type="email" still gets the right keyboard.
+            autoComplete="username"
             className={inputClass}
           />
         </label>
