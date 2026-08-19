@@ -1,5 +1,6 @@
 "use client";
 
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { KIND_VISUALS } from "@/app/components/task-visuals";
@@ -21,6 +22,8 @@ export default function TaskBlock({
   occurrenceDate,
   col = 0,
   cols = 1,
+  onDragPointerDown,
+  dragging = false,
 }: {
   task: TaskBlockData;
   kind: "routine" | "dated";
@@ -29,6 +32,9 @@ export default function TaskBlock({
   occurrenceDate: Date;
   col?: number;
   cols?: number;
+  /** Present makes the whole block draggable. */
+  onDragPointerDown?: (event: ReactPointerEvent<HTMLElement>) => void;
+  dragging?: boolean;
 }) {
   const { pending, done, celebrating, toggle } = useTaskActions(
     task.id,
@@ -42,19 +48,28 @@ export default function TaskBlock({
     <button
       type="button"
       onClick={() => toggle(occurrenceDate)}
+      onPointerDown={onDragPointerDown}
       title={`${task.title}${task.startTime ? ` · ${task.startTime}` : ""}`}
       style={{
         top,
         height,
         left: `calc(${(col * 100) / cols}% + 3px)`,
         width: `calc(${100 / cols}% - 6px)`,
+        // Overrides .pressable's `manipulation`. Without it the browser claims
+        // the gesture for scrolling and a touch drag never starts.
+        touchAction: onDragPointerDown ? "none" : undefined,
       }}
       className={cn(
         "pressable lift group absolute overflow-hidden rounded-lg border py-1 pl-3 pr-1.5 text-left",
         "hover:z-10",
         visuals.surface,
+        onDragPointerDown && "cursor-grab active:cursor-grabbing",
         pending && "opacity-60",
-        done && "opacity-55"
+        done && "opacity-55",
+        // Faded, but still hit-testable: the drop resolver walks up from
+        // whatever is under the pointer to find the day column, and that path
+        // runs straight through this block.
+        dragging && "opacity-25"
       )}
     >
       <span

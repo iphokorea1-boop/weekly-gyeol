@@ -289,6 +289,19 @@ export function layoutOverlaps<T>(
   return result;
 }
 
+/** Inverse of `formatDateISO`. Parsed by parts so no timezone is consulted. */
+export function parseDateISO(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return makeDate(y, m - 1, d);
+}
+
+/** Minutes since midnight → `HH:MM`. 1440 renders as `24:00`, not `00:00`. */
+export function minutesToTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 export function formatDateISO(date: Date): string {
   const d = toDateOnly(date);
   const yyyy = d.getUTCFullYear();

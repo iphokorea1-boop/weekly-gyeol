@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/dal";
 import {
@@ -8,21 +7,16 @@ import {
   formatKo,
   formatMonthISO,
   getMonthGrid,
-  isDoneOn,
-  isSameDay,
   parseMonthParam,
-  routineOccursOn,
-  taskKind,
   todayInSeoul,
-  weekdayLabel,
-  weekdayOf,
 } from "@/lib/task-utils";
 import { hasLunarData, holidayMap } from "@/lib/holidays";
+import { xpFor } from "@/lib/gamification";
 import PeriodNav from "@/app/components/period-nav";
+import MonthBoard from "@/app/components/month-board";
+import type { BoardTask } from "@/app/components/board-task";
 
 export const dynamic = "force-dynamic";
-
-const MAX_CHIPS_PER_DAY = 3;
 
 type PageProps = { searchParams: Promise<{ month?: string }> };
 
@@ -32,9 +26,6 @@ export default async function MonthPage({ searchParams }: PageProps) {
   const grid = getMonthGrid(monthStart);
   const gridStart = grid[0];
   const gridEnd = grid[grid.length - 1];
-  // Public holidays are computed, not stored — see lib/holidays.ts.
-  const holidays = holidayMap(gridStart, gridEnd);
-  const lunarKnown = hasLunarData(monthStart.getUTCFullYear());
 
   const user = await requireUser();
 
@@ -47,10 +38,6 @@ export default async function MonthPage({ searchParams }: PageProps) {
   });
 
   const today = todayInSeoul();
-  const weeks = Array.from({ length: grid.length / 7 }, (_, i) =>
-    grid.slice(i * 7, i * 7 + 7)
-  );
-
   const monthLabel = formatKo(monthStart, { year: "numeric", month: "long" });
 
   const monthDays = grid.filter(
@@ -63,6 +50,24 @@ export default async function MonthPage({ searchParams }: PageProps) {
     },
     { total: 0, done: 0 }
   );
+
+  const boardTasks: BoardTask[] = tasks.map((t) => ({
+    id: t.id,
+    title: t.title,
+    startTime: t.startTime,
+    endTime: t.endTime,
+    dueDate: t.dueDate ? formatDateISO(new Date(t.dueDate)) : null,
+    weekdays: t.weekdays,
+    xp: xpFor(t.priority),
+    completions: t.completions.map((c) => formatDateISO(new Date(c.date))),
+  }));
+
+  // Public holidays are computed, not stored — see lib/holidays.ts.
+  const holidays: Record<string, string[]> = {};
+  for (const [date, list] of holidayMap(gridStart, gridEnd)) {
+    holidays[date] = list.map((h) => h.name);
+  }
+  const lunarKnown = hasLunarData(monthStart.getUTCFullYear());
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 pt-4 pb-10 sm:px-6">
@@ -89,127 +94,18 @@ export default async function MonthPage({ searchParams }: PageProps) {
         />
       </header>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
-        <div className="min-w-[720px]">
-          <div className="grid grid-cols-7 border-b border-border">
-            {grid.slice(0, 7).map((d) => (
-              <div
-                key={d.toISOString()}
-                className="border-r border-border px-2 py-2 text-center text-[11px] font-bold tracking-wide text-ink-faint last:border-r-0"
-              >
-                {weekdayLabel(weekdayOf(d))}
-              </div>
-            ))}
-          </div>
-
-          {weeks.map((week) => (
-            <div
-              key={week[0].toISOString()}
-              className="grid grid-cols-7 border-b border-border last:border-b-0"
-            >
-              {week.map((date) => {
-                const inMonth = date.getUTCMonth() === monthStart.getUTCMonth();
-                const isToday = isSameDay(date, today);
-                const dayHolidays = holidays.get(formatDateISO(date)) ?? [];
-                const isHoliday = dayHolidays.length > 0;
-                const dated = tasks.filter(
-                  (t) =>
-                    taskKind(t) === "dated" &&
-                    t.dueDate &&
-                    isSameDay(new Date(t.dueDate), date)
-                );
-                const routines = tasks.filter(
-                  (t) =>
-                    taskKind(t) === "routine" && routineOccursOn(t.weekdays, date)
-                );
-                const routinesDone = routines.filter((t) =>
-                  isDoneOn(t, date)
-                ).length;
-
-                return (
-                  <Link
-                    key={date.toISOString()}
-                    href={`/week?week=${formatDateISO(date)}`}
-                    className={`pressable press-soft flex min-h-[104px] min-w-0 flex-col gap-1 border-r border-border p-1.5 last:border-r-0 hover:bg-surface-sunk ${
-                      inMonth ? "" : "opacity-45"
-                    } ${
-                      isToday
-                        ? "bg-dated-soft/40"
-                        : isHoliday
-                          ? "bg-holiday-soft/50"
-                          : ""
-                    }`}
-                  >
-                    <span
-                      className={`grid h-5 w-5 place-items-center rounded-full text-xs font-bold tabular-nums ${
-                        isToday
-                          ? "bg-dated text-white"
-                          : isHoliday
-                            ? "text-holiday"
-                            : ""
-                      }`}
-                    >
-                      {date.getUTCDate()}
-                    </span>
-
-                    <div className="flex flex-col gap-1">
-                      {/* Holidays sit above the day's own tasks: they're the
-                          context you read the rest of the cell against. */}
-                      {dayHolidays.map((h) => (
-                        <span
-                          key={h.name}
-                          className="truncate rounded-md border-l-[3px] border-holiday bg-holiday-soft px-1.5 py-0.5 text-[11px] font-semibold text-holiday"
-                        >
-                          {h.name}
-                        </span>
-                      ))}
-                      {dated.slice(0, MAX_CHIPS_PER_DAY).map((t) => {
-                        const done = isDoneOn(t, date);
-                        return (
-                          <span
-                            key={t.id}
-                            className={`truncate rounded-md border-l-[3px] border-dated bg-dated-soft px-1.5 py-0.5 text-[11px] font-semibold text-dated-ink ${
-                              done ? "opacity-50 line-through" : ""
-                            }`}
-                          >
-                            {t.startTime ? `${t.startTime} ` : ""}
-                            {t.title}
-                          </span>
-                        );
-                      })}
-                      {dated.length > MAX_CHIPS_PER_DAY && (
-                        <span className="px-1 text-[10px] font-medium text-ink-faint">
-                          +{dated.length - MAX_CHIPS_PER_DAY}건 더
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Routine load sits as a quiet bar so it doesn't compete
-                        with the day's actual appointments. */}
-                    {routines.length > 0 && (
-                      <div
-                        className="mt-auto h-1 overflow-hidden rounded-full bg-surface-sunk"
-                        title={`정기 루틴 ${routinesDone}/${routines.length} 완료`}
-                      >
-                        <span
-                          className="block h-full rounded-full bg-routine"
-                          style={{
-                            width: `${(routinesDone / routines.length) * 100}%`,
-                          }}
-                        />
-                      </div>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
+      <MonthBoard
+        gridDates={grid.map(formatDateISO)}
+        monthISO={formatMonthISO(monthStart)}
+        todayISO={formatDateISO(today)}
+        tasks={boardTasks}
+        holidays={holidays}
+      />
 
       <footer className="flex flex-col items-center gap-1 text-center text-[11px] text-ink-faint">
         <span>
-          날짜를 누르면 그 주의 시간표로 이동합니다 · 칸 아래 막대 = 그날 루틴 완료율
+          칩을 끌어 다른 날짜로 옮길 수 있어요 · 날짜를 누르면 그 주의 시간표로
+          이동합니다 · 칸 아래 막대 = 그날 루틴 완료율
         </span>
         {/* Saying nothing here would quietly turn a missing 추석 into "there is
             no 추석 that year". */}

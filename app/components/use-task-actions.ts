@@ -7,7 +7,7 @@ import { useState } from "react";
  * A single short tap. Android honours this; iOS Safari ignores it entirely, so
  * it's a bonus on the devices that support it rather than part of the design.
  */
-function tapFeedback() {
+export function tapFeedback() {
   if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
     navigator.vibrate(8);
   }

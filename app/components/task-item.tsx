@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Check, X } from "lucide-react";
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import { Check, GripVertical, X } from "lucide-react";
 import type { TaskKind } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { KIND_VISUALS } from "@/app/components/task-visuals";
@@ -30,12 +30,21 @@ export default function TaskItem({
   kind,
   extra,
   index = 0,
+  onDragPointerDown,
+  dragging = false,
 }: {
   task: TaskItemData;
   kind: TaskKind;
   extra?: ReactNode;
   /** Position in its list, used to stagger the entrance. */
   index?: number;
+  /**
+   * Present adds a drag grip. The grip rather than the whole row, because a
+   * row fills the list's width — making all of it drag-on-touch would leave
+   * no way to scroll the list on a phone.
+   */
+  onDragPointerDown?: (event: ReactPointerEvent<HTMLElement>) => void;
+  dragging?: boolean;
 }) {
   const { pending, burst, done, celebrating, toggle, remove } = useTaskActions(
     task.id,
@@ -57,7 +66,8 @@ export default function TaskItem({
         "pressable press-soft lift animate-item-in group relative flex items-center gap-2.5 rounded-xl border py-2.5 pl-5 pr-2.5",
         visuals.surface,
         pending && "opacity-60",
-        done && "opacity-60"
+        done && "opacity-60",
+        dragging && "opacity-25"
       )}
     >
       {/* Clipped by its own wrapper rather than the row, so the row can still
@@ -78,6 +88,17 @@ export default function TaskItem({
           done && "opacity-40"
         )}
       />
+
+      {onDragPointerDown && (
+        <span
+          aria-hidden
+          onPointerDown={onDragPointerDown}
+          style={{ touchAction: "none" }}
+          className="-ml-2 flex-none cursor-grab rounded p-0.5 opacity-40 hover:opacity-80 active:cursor-grabbing"
+        >
+          <GripVertical className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </span>
+      )}
 
       <div className="relative flex-none">
         <button

@@ -462,6 +462,40 @@
  * visible, they just stop moving — so the tick is drawn instantly rather than
  * being left half-retracted by a cancelled animation.
  */
+/* ---------------------------------------------------------------------------
+ * Dragging
+ *
+ * The chip that follows the pointer. Lifted well above the contact point so a
+ * finger doesn't cover the thing it is carrying, and tilted a degree or two so
+ * it reads as picked up rather than as part of the page. Never hit-testable:
+ * the drop resolver asks what is under the pointer, and this must not be it.
+ */
+.drag-ghost {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  translate: -50% -140%;
+  rotate: -1.5deg;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  padding: 0.3rem 0.6rem;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--foreground);
+  box-shadow: var(--shadow-raised);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-ghost {
+    rotate: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pressable,
   .pressable:active {
