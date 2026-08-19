@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>주간결 인수인계 문서</title>
+<link rel="stylesheet" href="doc-style.css">
+</head>
+<body>
+
+<section class="cover">
+  <div class="marks"><i></i><i></i><i></i></div>
+  <div class="eyebrow">Handover Document</div>
+  <h1>주간결 (Weekly-gyeol)<br>인수인계 문서</h1>
+  <p class="sub">개인 시간관리 웹앱 — 무엇을 만들었고, 왜 그렇게 만들었으며,
+     지금 무엇이 위험한가.</p>
+  <div class="meta">
+    <b>대상 저장소</b> &nbsp;github.com/iphokorea1-boop/weekly-gyeol<br>
+    <b>운영 주소</b> &nbsp;weekly-gyeol.vercel.app<br>
+    <b>기준 커밋</b> &nbsp;20e1b7e (2026-08-19)<br>
+    <b>문서 작성</b> &nbsp;2026-08-19
+  </div>
+</section>
+
+<h2><span class="n">0</span>이 문서를 읽는 법</h2>
+
+<p class="lead">이 문서는 기능 목록이 아니라 <strong>판단의 기록</strong>입니다.
+코드가 무엇을 하는지는 코드를 읽으면 알 수 있지만, 왜 그렇게 되어 있는지는
+읽어서 알 수 없기 때문입니다.</p>
+
+<p>따라서 가장 중요한 장은 <strong>3장(핵심 설계 결정)</strong>입니다. 코드를 고치기 전에
+그 장만은 반드시 읽으십시오. 거기 적힌 결정들은 대부분 실제로 무언가가 잘못된 뒤에
+내려진 것이라, 근거를 모르고 되돌리면 같은 문제가 다시 발생합니다.</p>
+
+<p>급한 사람을 위한 순서:</p>
+<ul>
+  <li><strong>당장 배포·운영을 맡아야 한다</strong> → 6장, 7장</li>
+  <li><strong>코드를 고쳐야 한다</strong> → 3장, 4장, 그리고 별도 문서 『초보 개발자를 위한 코드 안내서』</li>
+  <li><strong>제품 방향을 판단해야 한다</strong> → 1장, 9장</li>
+</ul>
+
+<h3>한 장 요약</h3>
+
+<table>
+  <tr><th style="width:26%">항목</th><th>내용</th></tr>
+  <tr><td>무엇</td><td>할 일 · 반복 루틴 · 미배치 항목을 한 화면에서 관리하는 개인 시간관리 웹앱</td></tr>
+  <tr><td>누구</td><td>1차 사용자는 제작자 본인(고등학생). 다중 사용자 지원은 갖췄으나 아직 공개 배포 전</td></tr>
+  <tr><td>기술</td><td>Next.js 16.3.1 (App Router) · React 19 · TypeScript · Prisma 6 · PostgreSQL(Neon) · Tailwind CSS v4</td></tr>
+  <tr><td>배포</td><td>Vercel. <code>main</code> 브랜치 푸시 시 자동 배포</td></tr>
+  <tr><td>코드 규모</td><td>약 3,800줄 (설정·잠금파일 제외)</td></tr>
+  <tr><td>외부 인증 의존성</td><td>없음. 비밀번호 해싱은 Node 내장 <code>scrypt</code>, 세션은 자체 DB 테이블</td></tr>
+  <tr><td>가장 큰 미완성</td><td>비밀번호 재설정 없음 · 로그인 시도 제한 없음 · 개발용 DB 미분리 · 삭제 되돌리기 없음</td></tr>
+</table>
+
+<h2><span class="n">1</span>제품: 무엇을 푸는가</h2>
+
+<h3>1.1 문제 인식</h3>
+
+<p>학생용 계획 앱이 실패하는 지점은 대개 <strong>의지가 아니라 과적(過積)</strong>입니다.
+하루에 12개를 적고, 4개를 하고, 죄책감을 느끼고, 앱을 지웁니다. 대부분의 도구는
+20개를 적어도 아무 말을 하지 않으며, 오히려 많이 적을수록 성실한 것처럼 보여줍니다.</p>
+
+<p>주간결은 반대 방향을 택했습니다. 하루가 얼마나 찼는지를 항상 보여주고
+(<code>capacityPercent</code>), 연속 기록의 기준을 100%가 아니라 70%로 두어
+한 번 못 지킨 날이 전체를 무너뜨리지 않게 했습니다. 이는 취향이 아니라
+제품의 중심 가설이며, 바꾸려면 의식적으로 바꿔야 합니다.</p>
+
+<h3>1.2 세 가지 분류 — 이 앱의 핵심 개념</h3>
+
+<p>모든 항목은 <strong>단 하나의 <code>Task</code> 테이블</strong>에 저장되고,
+두 개의 컬럼 값에 따라 세 종류로 해석됩니다. 별도 테이블이나 <code>type</code> 컬럼은
+없습니다.</p>
+
+<table>
+  <tr><th style="width:22%">분류</th><th style="width:30%">판별 조건</th><th>의미</th></tr>
+  <tr>
+    <td><span class="tag routine">정기 루틴</span></td>
+    <td><code>weekdays</code>가 있음</td>
+    <td>요일 반복. 예: 월·수·금 운동. <code>dueDate</code>는 무시됨</td>
+  </tr>
+  <tr>
+    <td><span class="tag dated">날짜 있는 할 일</span></td>
+    <td><code>dueDate</code>만 있음</td>
+    <td>특정 날짜의 일. 시간이 있으면 주간 격자에, 없으면 "종일" 행에</td>
+  </tr>
+  <tr>
+    <td><span class="tag floating">언젠가 할 일</span></td>
+    <td>둘 다 없음</td>
+    <td>미배치함. 날짜를 정하는 순간 자동으로 위 분류로 승격</td>
+  </tr>
+</table>
+
+<div class="box why">
+  <span class="t">왜 한 테이블인가</span>
+  <p>세 테이블로 나누면 "미배치 항목에 날짜를 붙이는" 동작이 <em>행 이동</em>이 되어,
+  트랜잭션·ID 변경·참조 갱신이 필요해집니다. 한 테이블에서는 <code>dueDate</code>에
+  값을 하나 넣는 것으로 끝나고, 완료 기록(<code>TaskCompletion</code>)도 그대로 따라옵니다.
+  분류 로직은 <code>lib/task-utils.ts</code>의 <code>taskKind()</code> 한 곳에만 있습니다.</p>
+</div>
+
+<h3>1.3 화면 구성</h3>
+
+<table>
+  <tr><th style="width:16%">경로</th><th style="width:22%">역할</th><th>내용</th></tr>
+  <tr><td><code>/</code></td><td>오늘</td>
+      <td>연속 기록 카드, 오늘 할 일(기한 지난 것 포함), 오늘의 루틴, 미배치함, 추가 폼</td></tr>
+  <tr><td><code>/week</code></td><td>주간 시간표</td>
+      <td>06–24시 7일 격자. 겹치는 일정은 나란히 배치. 현재 시각 선. 미니 달력과 미배치함 사이드바</td></tr>
+  <tr><td><code>/month</code></td><td>월간</td>
+      <td>달력 격자. 날짜 있는 할 일은 칩으로, 루틴 완료율은 칸 아래 얇은 막대로</td></tr>
+  <tr><td><code>/year</code></td><td>연간</td>
+      <td>12개월 히트맵(실천율), 배지 목록</td></tr>
+  <tr><td><code>/login</code></td><td>로그인·가입</td>
+      <td>유일한 비공개 아님 경로</td></tr>
+</table>
+
+<h2><span class="n">2</span>개발 연혁</h2>
+
+<p class="lead">커밋 12개, 이틀. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
+과거 결정의 맥락을 추적할 때 이 표에서 커밋 해시를 찾아 <code>git show</code>로 보십시오.</p>
+
+<table>
+  <tr><th style="width:12%">커밋</th><th style="width:30%">제목</th><th>맥락</th></tr>
+  <tr><td><code>575f259</code></td><td>Initial commit from Create Next App</td><td>Next.js 기본 골격</td></tr>
+  <tr><td><code>ff7a10e</code></td><td>Add task/routine/floating data model, today &amp; weekly views</td>
+      <td>세 분류 데이터 모델 확정, 오늘·주간 화면, Vercel 배포 준비</td></tr>
+  <tr><td><code>c697452</code></td><td>Add initial Postgres migration and Neon direct-url config</td>
+      <td>SQLite → PostgreSQL 전환. 마이그레이션에 필요한 <code>directUrl</code> 추가</td></tr>
+  <tr><td><code>4007c24</code></td><td>Run migrations outside the build</td>
+      <td>빌드 중 마이그레이션이 실패해 배포가 두 번 깨짐. 빌드에서 분리</td></tr>
+  <tr><td><code>e867117</code></td><td>Add month and year views, and an app shell</td>
+      <td>더 긴 기간 조망. 4개 탭 상단 내비게이션 추가</td></tr>
+  <tr><td><code>3d2b235</code></td><td>Rebuild the visual system on Radix Colors, shadcn/ui and Lucide</td>
+      <td>빗금 패턴이 칩 크기에서 뭉개짐. 아이콘+색 레일 방식으로 교체</td></tr>
+  <tr><td><code>7ff7765</code></td><td>Add streaks, XP and badges, and fix overdue completion</td>
+      <td>동기 부여 계층 추가. 이 과정에서 <strong>기한 지난 할 일은 체크가 저장되지 않던 버그</strong> 발견·수정</td></tr>
+  <tr><td><code>eaa6557</code></td><td>Anchor all date logic to Korea Standard Time</td>
+      <td>서버(UTC)와 사용자(KST) 시차로 매일 0–9시에 "어제"로 표시되던 문제</td></tr>
+  <tr><td><code>6ab62f5</code></td><td>Make interactions respond on press instead of on response</td>
+      <td>체크박스가 서버 응답을 기다려 반응이 죽어 보임. 낙관적 UI 도입</td></tr>
+  <tr><td><code>5e76709</code></td><td>Give presses depth instead of only scale</td>
+      <td>누름 효과가 지나치게 미세해 체감되지 않음. 그림자 기반 깊이로 재설계.
+          동시에 격자 정렬 버그 2건 수정</td></tr>
+  <tr><td><code>e8155b7</code></td><td>Give the app accounts so it can have more than one user</td>
+      <td>계정·세션 도입. 동시에 <strong>IDOR 취약점</strong> 차단</td></tr>
+  <tr><td><code>20e1b7e</code></td><td>Let password managers recognise the sign-in form</td>
+      <td>아이디 칸의 <code>autocomplete</code> 토큰 교정</td></tr>
+</table>
+
+<div class="box tip">
+  <span class="t">커밋 메시지를 읽으십시오</span>
+  <p>이 저장소의 커밋 메시지는 "무엇을 바꿨다"가 아니라 <strong>"왜 그것이 문제였고,
+  어떻게 확인했는가"</strong>를 담고 있습니다. 특정 코드가 왜 그 모양인지 궁금하면
+  <code>git log -p --follow &lt;파일&gt;</code>이 이 문서보다 정확합니다.</p>
+</div>
+
+<h2><span class="n">3</span>핵심 설계 결정</h2>
+
+<p class="lead">여기 있는 결정 대부분은 <strong>무언가가 실제로 잘못된 뒤에</strong> 내려졌습니다.
+근거를 모른 채 되돌리면 같은 문제가 재발합니다.</p>
+
+<h3>3.1 모든 날짜는 한국시간 기준, UTC 자정으로 저장</h3>
+
+<p><strong>문제.</strong> Vercel 서버는 UTC로 동작하고 사용자는 KST입니다. 코드가
+<code>date.getFullYear()</code> 같은 <em>서버 지역시간</em> 함수를 쓰고 있었기 때문에,
+매일 <strong>0시부터 9시 사이에는 앱이 아직 어제라고 판단</strong>했습니다.
+연속 기록이 날짜 단위로 계산되므로 밤에 목표를 채워도 기록이 어긋났습니다.</p>
+
+<p><strong>결정.</strong> 서버 시간대를 KST로 고정하는 대신, <strong>날짜 계산 자체를
+시간대와 무관하게</strong> 다시 썼습니다. 한국은 1988년 이후 서머타임이 없어 +9 고정
+오프셋이 정확합니다.</p>
+
+<div class="filename">lib/task-utils.ts</div>
+<pre><code><span class="k">export const</span> KST_OFFSET_MINUTES = 9 * 60;
+
+<span class="c">/** UTC 게터로 서울 벽시계 값을 읽도록 순간을 이동시킨다. */</span>
+<span class="k">function</span> <span class="f">seoulClock</span>(date: Date): Date {
+  <span class="k">return new</span> Date(date.getTime() + KST_OFFSET_MINUTES * 60_000);
+}
+
+<span class="c">/** 표준 날짜 값 = 그 순간이 속한 서울 달력 날짜의 UTC 자정.
+    저장된 값에 다시 적용해도 결과가 같다(멱등). */</span>
+<span class="k">export function</span> <span class="f">toDateOnly</span>(date: Date): Date {
+  <span class="k">const</span> k = seoulClock(date);
+  <span class="k">return new</span> Date(Date.<span class="f">UTC</span>(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()));
+}</code></pre>
+
+<div class="box why">
+  <span class="t">왜 서버 TZ 고정이 아니라 이 방식인가</span>
+  <p><code>TZ=Asia/Seoul</code>은 증상만 가립니다. Vercel은 UTC지만 개발자의 로컬
+  컴퓨터는 KST라, 같은 코드가 두 환경에서 다르게 동작하는 문제가 그대로 남습니다.
+  실제로 노션에서 일정을 가져올 때 날짜가 하루씩 밀린 사고가 정확히 이 원인이었습니다.
+  지금 방식은 <strong>어디서 실행하든 결과가 동일</strong>합니다.</p>
+</div>
+
+<div class="box trap">
+  <span class="t">건드릴 때 주의</span>
+  <p><code>lib/task-utils.ts</code> 안의 날짜 함수는 전부 <strong>UTC 게터</strong>
+  (<code>getUTCDate()</code> 등)로 작성돼 있습니다. 여기에 <code>getDate()</code>,
+  <code>new Date(y, m, d)</code>, <code>toLocaleDateString()</code>을 시간대 지정 없이
+  섞으면 조용히 하루가 밀립니다. 화면 표기는 반드시 <code>formatKo()</code>를 쓰십시오
+  (내부에서 <code>timeZone: "UTC"</code>를 강제합니다).</p>
+</div>
+
+<h3>3.2 연속 기록의 기준은 100%가 아니라 70%</h3>
+
+<p><strong>결정.</strong> 하루 예정 항목의 70% 이상을 끝내면 그날은 지킨 날입니다.
+일정이 없는 날은 기록을 끊지 않고 중립으로 넘어가며, <strong>오늘은 목표를 채우기
+전까지 실패로 계산되지 않습니다.</strong></p>
+
+<div class="filename">lib/gamification.ts</div>
+<pre><code><span class="k">export const</span> DAILY_GOAL_RATE = 0.7;
+
+<span class="c">// 오늘은 실제로 채워지기 전까지 중립 — 아침의 미완료가
+// 연속 기록이 끊긴 것처럼 보이면 안 된다.</span>
+<span class="k">let</span> cursor = dayStatus(tasks, today).outcome === <span class="s">"kept"</span>
+  ? today
+  : addDays(today, -1);</code></pre>
+
+<div class="box why">
+  <span class="t">근거</span>
+  <p>전부 아니면 전무인 기준이 연속 기록을 취약하게 만듭니다. 90% 한 날에 0으로
+  리셋되면 그 기록은 지킬 가치가 없어집니다. 또 한 가지 중요한 규칙이 있습니다.
+  <strong>항목은 자신이 생성된 날짜 이후에 대해서만 계산</strong>됩니다. 그렇지 않으면
+  오늘 루틴을 하나 추가하는 순간 과거 전체가 소급해서 실패한 날이 됩니다.</p>
+</div>
+
+<h3>3.3 화면을 먼저 칠하고, 서버에는 그 다음에 묻는다</h3>
+
+<p><strong>문제.</strong> 체크박스가 서버 응답을 기다린 뒤에야 상태를 바꾸고 있었습니다.
+한국에서 Neon까지 왕복이 100–300ms인데 그동안 화면에 아무 변화가 없어,
+애니메이션을 아무리 다듬어도 반응이 죽어 보였습니다.</p>
+
+<p><strong>결정.</strong> 클릭 즉시 로컬 상태로 칠하고, 서버 응답이 다르면 정정합니다.
+되돌림 기준은 타이머가 아니라 <strong>서버가 준 새 값</strong>입니다.</p>
+
+<div class="filename">app/components/use-task-actions.ts</div>
+<pre><code><span class="c">// 새로 렌더된 서버 값이 마지막으로 본 값과 다르면 로컬 추측을 버린다.
+// 타이머로 하면 느린 통신에서 요청 도중 만료돼 옛 상태가 번쩍인다.</span>
+<span class="k">const</span> [seenServerDone, setSeenServerDone] = useState(serverDone);
+<span class="k">if</span> (seenServerDone !== serverDone) {
+  setSeenServerDone(serverDone);
+  setOptimistic(<span class="k">null</span>);
+}
+<span class="k">const</span> done = optimistic ?? serverDone;</code></pre>
+
+<p>검증 시 완료 API에 1500ms 지연을 걸고 클릭했을 때 체크박스는 <strong>136ms</strong>에
+반응했습니다. 즉 네트워크를 기다리지 않습니다.</p>
+
+<h3>3.4 인증에 외부 의존성을 쓰지 않는다</h3>
+
+<p><strong>결정.</strong> 비밀번호 해싱은 Node 내장 <code>scrypt</code>(OWASP 권장 KDF),
+세션은 자체 <code>Session</code> 테이블의 불투명 토큰입니다. 새 패키지도, 서명 키
+환경변수도 없습니다.</p>
+
+<table>
+  <tr><th style="width:30%">선택</th><th>이유</th></tr>
+  <tr><td>JWT가 아닌 DB 세션</td>
+      <td>즉시 무효화가 가능하고, 서명 키를 설정·보관·유출 걱정할 필요가 없음.
+          페이지가 이미 매 요청 DB를 조회하므로 추가 비용이 사실상 없음</td></tr>
+  <tr><td>쿠키엔 원본, DB엔 SHA-256</td>
+      <td>DB 덤프가 유출돼도 세션을 재사용할 수 없음</td></tr>
+  <tr><td>비밀번호 NFKC 정규화</td>
+      <td>한글은 조합형·분해형 두 형태가 있고 macOS와 Windows가 서로 다른 것을 만듦.
+          정규화하지 않으면 같은 비밀번호로 다른 기기에서 로그인이 실패</td></tr>
+  <tr><td>실패 메시지 단일화</td>
+      <td>없는 이메일과 틀린 비밀번호가 완전히 같은 문구·같은 소요 시간.
+          다르면 가입 여부를 알아내는 도구가 됨</td></tr>
+</table>
+
+<h3>3.5 권한 검사를 쿼리 안에 넣는다</h3>
+
+<p><strong>문제.</strong> 계정이 생기기 전 API는 <code>id</code>만 받으면 그대로 수정·삭제했습니다.
+단일 사용자일 때는 무해했지만, 계정이 생기는 순간 <strong>id만 추측하면 남의 할 일을
+지울 수 있는 IDOR 취약점</strong>이 됩니다.</p>
+
+<div class="filename">app/api/tasks/[id]/route.ts</div>
+<pre><code><span class="c">// update가 아니라 updateMany: 유일키가 아닌 조건을 받을 수 있어
+// 소유권 검사가 같은 문장 안에서 일어난다.</span>
+<span class="k">const</span> result = <span class="k">await</span> prisma.task.<span class="f">updateMany</span>({
+  where: { id, <span class="hl">userId: user.id</span> },
+  data: { <span class="c">/* ... */</span> },
+});
+<span class="k">if</span> (result.count === 0) {
+  <span class="c">// 없는 것과 남의 것을 같은 404로 답해 id 존재 여부를 노출하지 않는다.</span>
+  <span class="k">return</span> NextResponse.json({ error: <span class="s">"not found"</span> }, { status: 404 });
+}</code></pre>
+
+<div class="box trap">
+  <span class="t">새 API를 추가할 때 반드시</span>
+  <p>조회는 <code>where</code>에 <code>userId</code>를 넣고, 수정·삭제는
+  <code>updateMany</code>/<code>deleteMany</code>로 소유권을 조건에 포함시키십시오.
+  <code>update({ where: { id } })</code>는 편해 보이지만 그 자체로 취약점입니다.
+  <code>TaskCompletion</code>처럼 소유자 컬럼이 없는 테이블은 <strong>부모 Task의
+  소유권을 먼저 확인</strong>해야 합니다.</p>
+</div>
+
+<h3>3.6 기존 데이터는 주인 없음으로 두고 첫 가입자가 인수</h3>
+
+<p>계정 도입 전에 만들어진 8건은 소유자가 없습니다. <code>Task.userId</code>를
+<strong>nullable</strong>로 두어, 주인 없는 행은 누구의 필터에도 걸리지 않아
+<em>노출되는 대신 보이지 않게</em> 했습니다.</p>
+
+<div class="filename">app/actions/auth.ts</div>
+<pre><code><span class="c">// 계정이 하나도 없을 때만 인수 — 나중에 가입한 사람이
+// 남의 데이터를 가져가는 일이 절대 불가능하도록.</span>
+<span class="k">const</span> isFirstAccount = (<span class="k">await</span> tx.user.count()) === 0;
+<span class="k">const</span> created = <span class="k">await</span> tx.user.create({ data: { email, passwordHash, name } });
+<span class="k">if</span> (isFirstAccount) {
+  <span class="k">await</span> tx.task.updateMany({ where: { userId: <span class="k">null</span> }, data: { userId: created.id } });
+}</code></pre>
+
+<div class="box warn">
+  <span class="t">현재 상태 (2026-08-19 기준)</span>
+  <p>계정이 아직 <strong>0개</strong>이고 8건이 주인 없는 상태입니다. 즉
+  <strong>가장 먼저 가입하는 사람이 이 데이터를 가져갑니다.</strong>
+  제작자 본인이 먼저 가입해야 합니다. 인수가 끝나면
+  <code>userId</code>를 <code>NOT NULL</code>로 조이는 후속 마이그레이션을 권합니다.</p>
+</div>
+
+<h3>3.7 가장 많은 분류에 가장 조용한 색</h3>
+
+<p>색은 Radix Colors 12단계 스케일을 씁니다. 배정은 빈도의 역순입니다.</p>
+
+<table>
+  <tr><th style="width:24%">분류</th><th style="width:22%">색</th><th>이유</th></tr>
+  <tr><td><span class="tag routine">정기 루틴</span></td><td>bronze (차분한 갈색)</td>
+      <td>가장 수가 많음. 채도가 높으면 주간 격자가 형광펜처럼 됨</td></tr>
+  <tr><td><span class="tag dated">날짜 있는 할 일</span></td><td>indigo</td>
+      <td>실제로 주의가 필요한 약속. 가장 눈에 띄어야 함</td></tr>
+  <tr><td><span class="tag floating">언젠가 할 일</span></td><td>teal + 점선 테두리</td>
+      <td>아직 확정이 아님을 점선으로 표현</td></tr>
+</table>
+
+<p>분류는 색만이 아니라 <strong>아이콘과 좌측 색 레일</strong>로도 구분됩니다.
+색각 이상 사용자를 고려한 것이며, 초기의 대각선 빗금 패턴은 칩 크기에서
+뭉개져 폐기했습니다.</p>
+
+<h3>3.8 누름은 크기가 아니라 깊이로 표현</h3>
+
+<p>세 상태를 씁니다. <strong>기본(바닥) → 호버(2px 떠오름 + 넓은 그림자) →
+누름(기본보다 아래로 + 그림자 붕괴).</strong> 호버와 누름 사이의 낙차가
+눌렸다는 감각을 만듭니다.</p>
+
+<p>타이밍은 의도적으로 비대칭입니다. 호버 180ms(튕김 없음), 누름 100ms,
+<strong>놓을 때만</strong> 350ms 스프링. 양쪽을 같게 하면 누를 때 굼뜨고
+뗄 때 기계적으로 느껴집니다. 크기 변화는 표면이 클수록 작게 주어
+<em>체감 이동량</em>을 일정하게 맞췄습니다(<code>.press-soft</code> 2.2%,
+<code>.press-deep</code> 14%).</p>
+
+<div class="box tip">
+  <span class="t">조절 지점</span>
+  <p>전부 <code>app/globals.css</code> 한 곳에 있습니다. <code>--ease-smooth</code>,
+  <code>--ease-spring</code>, <code>.pressable</code>, <code>.lift</code>,
+  <code>--shadow-rest / raised / pressed</code>. <code>prefers-reduced-motion</code>
+  블록도 같은 파일 하단에 있으니 새 애니메이션을 추가하면 거기에도 등록하십시오.</p>
+</div>
+
+<h2><span class="n">4</span>시스템 구조</h2>
+
+<h3>4.1 전체 그림</h3>
+
+<figure>
+<svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg"
+     font-family="Malgun Gothic, sans-serif" font-size="11">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto">
+      <path d="M0,0 L8,3.2 L0,6.4 Z" fill="#82827c"/>
+    </marker>
+  </defs>
+
+  <rect x="6" y="86" width="118" height="66" rx="9" fill="#f1f0ef" stroke="#dad9d6"/>
+  <text x="65" y="112" text-anchor="middle" font-weight="700">브라우저</text>
+  <text x="65" y="130" text-anchor="middle" fill="#63635e" font-size="9.5">쿠키: session</text>
+
+  <rect x="152" y="26" width="418" height="196" rx="11" fill="#fdfdfc" stroke="#3e63dd" stroke-width="1.6"/>
+  <text x="168" y="46" font-weight="700" fill="#3a5bc7">Vercel — Next.js 16 (App Router)</text>
+
+  <rect x="170" y="60" width="112" height="48" rx="7" fill="#edf2fe" stroke="#abbdf9"/>
+  <text x="226" y="80" text-anchor="middle" font-weight="700" font-size="10">proxy.ts</text>
+  <text x="226" y="96" text-anchor="middle" fill="#3a5bc7" font-size="9">쿠키 유무만 확인</text>
+
+  <rect x="170" y="126" width="112" height="72" rx="7" fill="#f1f0ef" stroke="#dad9d6"/>
+  <text x="226" y="147" text-anchor="middle" font-weight="700" font-size="10">페이지</text>
+  <text x="226" y="163" text-anchor="middle" fill="#63635e" font-size="9">서버 컴포넌트</text>
+  <text x="226" y="179" text-anchor="middle" fill="#63635e" font-size="9">API 라우트</text>
+  <text x="226" y="193" text-anchor="middle" fill="#63635e" font-size="9">Server Action</text>
+
+  <rect x="306" y="94" width="118" height="66" rx="7" fill="#e0f8f3" stroke="#83cdc1"/>
+  <text x="365" y="118" text-anchor="middle" font-weight="700" font-size="10">lib/dal.ts</text>
+  <text x="365" y="134" text-anchor="middle" fill="#008573" font-size="9">진짜 권한 검사</text>
+  <text x="365" y="148" text-anchor="middle" fill="#008573" font-size="9">세션 → 사용자</text>
+
+  <rect x="448" y="94" width="106" height="66" rx="7" fill="#f6edea" stroke="#d3bcb3"/>
+  <text x="501" y="118" text-anchor="middle" font-weight="700" font-size="10">Prisma</text>
+  <text x="501" y="136" text-anchor="middle" fill="#7d5e54" font-size="9">타입 안전 쿼리</text>
+
+  <rect x="600" y="86" width="150" height="66" rx="9" fill="#f1f0ef" stroke="#dad9d6"/>
+  <text x="675" y="110" text-anchor="middle" font-weight="700">Neon PostgreSQL</text>
+  <text x="675" y="128" text-anchor="middle" fill="#63635e" font-size="9.5">User · Session</text>
+  <text x="675" y="142" text-anchor="middle" fill="#63635e" font-size="9.5">Task · TaskCompletion</text>
+
+  <line x1="126" y1="112" x2="166" y2="90" stroke="#82827c" marker-end="url(#ar)"/>
+  <line x1="226" y1="110" x2="226" y2="122" stroke="#82827c" marker-end="url(#ar)"/>
+  <line x1="284" y1="150" x2="302" y2="132" stroke="#82827c" marker-end="url(#ar)"/>
+  <line x1="426" y1="127" x2="444" y2="127" stroke="#82827c" marker-end="url(#ar)"/>
+  <line x1="556" y1="122" x2="596" y2="119" stroke="#82827c" marker-end="url(#ar)"/>
+
+  <text x="380" y="240" text-anchor="middle" fill="#82827c" font-size="9.5">
+    proxy는 낙관적 통과만, 실제 차단은 DAL에서 — 데이터에 가장 가까운 곳에서 검사</text>
+</svg>
+<figcaption>요청 경로. 권한 판단은 화면이 아니라 데이터 접근 지점에 있다.</figcaption>
+</figure>
+
+<h3>4.2 데이터 모델</h3>
+
+<table>
+  <tr><th style="width:20%">테이블</th><th style="width:30%">핵심 컬럼</th><th>비고</th></tr>
+  <tr><td><code>User</code></td>
+      <td><code>email</code>(유일), <code>passwordHash</code>, <code>name</code></td>
+      <td>이메일은 소문자·공백제거 후 저장. 대소문자만 다른 중복 가입 방지</td></tr>
+  <tr><td><code>Session</code></td>
+      <td><code>tokenHash</code>(유일), <code>userId</code>, <code>expiresAt</code></td>
+      <td>쿠키 값의 SHA-256만 보관. 만료는 서버에서 판단</td></tr>
+  <tr><td><code>Task</code></td>
+      <td><code>title</code>, <code>dueDate</code>, <code>weekdays</code>,
+          <code>startTime</code>/<code>endTime</code>, <code>priority</code>,
+          <code>archived</code>, <code>userId</code></td>
+      <td>세 분류를 모두 담음. <code>userId</code>는 nullable(3.6 참조)</td></tr>
+  <tr><td><code>TaskCompletion</code></td>
+      <td><code>taskId</code>, <code>date</code>, <code>completedAt</code></td>
+      <td><code>(taskId, date)</code> 유일 제약이 중복 완료를 DB 차원에서 차단</td></tr>
+</table>
+
+<p><code>User</code> 삭제 시 <code>Task</code>와 <code>Session</code>이,
+<code>Task</code> 삭제 시 <code>TaskCompletion</code>이 <strong>연쇄 삭제(cascade)</strong>됩니다.
+계정을 지우면 그 사람의 데이터가 전부 사라진다는 뜻이므로 운영 시 주의가 필요합니다.</p>
+
+<div class="box tip">
+  <span class="t">시간 컬럼의 두 가지 성격</span>
+  <p><code>dueDate</code>와 <code>TaskCompletion.date</code>는 <strong>날짜</strong>이며
+  항상 서울 날짜의 UTC 자정으로 저장됩니다. 반면 <code>startTime</code>·<code>endTime</code>은
+  <strong>날짜가 없는 벽시계 문자열</strong>(<code>"09:30"</code>)입니다.
+  시간대 개념이 없으므로 시간대 변환을 적용하면 안 됩니다.</p>
+</div>
+
+<h3>4.3 코드 배치 원칙</h3>
+
+<table>
+  <tr><th style="width:28%">위치</th><th>담는 것</th></tr>
+  <tr><td><code>lib/task-utils.ts</code></td>
+      <td>순수 날짜·시간·격자 계산. Prisma 타입을 모름 → 단독 테스트가 쉬움</td></tr>
+  <tr><td><code>lib/gamification.ts</code></td>
+      <td>연속 기록·XP·배지. 전부 기존 완료 기록에서 <strong>파생</strong>되며 별도 테이블 없음</td></tr>
+  <tr><td><code>lib/auth.ts</code></td>
+      <td>비밀번호 해싱, 세션 발급·파기</td></tr>
+  <tr><td><code>lib/dal.ts</code></td>
+      <td>세션 쿠키 → 사용자. 모든 권한 판단의 단일 출입구</td></tr>
+  <tr><td><code>app/*/page.tsx</code></td>
+      <td>서버 컴포넌트. DB 조회 후 화면 조립</td></tr>
+  <tr><td><code>app/components/*</code></td>
+      <td>화면 조각. 상호작용이 있으면 <code>"use client"</code></td></tr>
+  <tr><td><code>app/api/*</code></td>
+      <td>브라우저가 <code>fetch</code>로 호출하는 JSON 엔드포인트</td></tr>
+  <tr><td><code>app/actions/*</code></td>
+      <td>Server Action. 폼 제출을 서버에서 직접 처리</td></tr>
+</table>
+
+<div class="box why">
+  <span class="t">게임화 데이터를 저장하지 않는 이유</span>
+  <p>연속 기록·XP·배지는 모두 <code>TaskCompletion</code>에서 그때그때 계산합니다.
+  저장했다면 기준을 바꿀 때마다(예: 70% → 60%) 과거 데이터를 다시 계산하는
+  마이그레이션이 필요했을 것입니다. 지금은 상수 하나만 바꾸면 과거까지 일관되게 반영됩니다.
+  사용자가 수천 명이 되면 재검토할 지점입니다.</p>
+</div>
+
+<h2><span class="n">5</span>인증과 권한</h2>
+
+<h3>5.1 로그인 흐름</h3>
+
+<ol class="steps">
+  <li><strong>가입/로그인 폼 제출</strong> — <code>app/actions/auth.ts</code>의 Server Action이
+      서버에서 직접 실행됩니다. 비밀번호가 네트워크 위 JSON으로 떠다니지 않습니다.</li>
+  <li><strong>비밀번호 검증</strong> — <code>scrypt</code>로 해시 비교
+      (<code>timingSafeEqual</code> 사용).</li>
+  <li><strong>세션 발급</strong> — 32바이트 난수 토큰 생성 → SHA-256을 DB에 저장 →
+      원본을 <code>httpOnly · sameSite=Lax · 30일</code> 쿠키로 내려줌.</li>
+  <li><strong>이후 모든 요청</strong> — <code>proxy.ts</code>가 쿠키 유무만 보고,
+      <code>lib/dal.ts</code>가 DB에서 실제 유효성과 만료를 확인합니다.</li>
+</ol>
+
+<div class="box why">
+  <span class="t">proxy가 로그인한 사용자를 /login에서 쫓아내지 않는 이유</span>
+  <p>만료된 쿠키는 <em>존재</em>하지만 <em>유효하지</em> 않습니다. proxy가 쿠키만 보고
+  "로그인됨"으로 판단해 <code>/</code>로 보내면, <code>/</code>의 진짜 검사가 실패해
+  다시 <code>/login</code>으로 보내고, 무한 반복이 됩니다. 그래서 그 리디렉션은
+  <strong>DB를 실제로 조회하는 로그인 페이지 자신이</strong> 수행합니다.</p>
+</div>
+
+<h3>5.2 검증된 사항</h3>
+
+<p>계정 기능은 다음 항목을 실제 서버 대상으로 확인했습니다.</p>
+
+<table>
+  <tr><th style="width:56%">항목</th><th>결과</th></tr>
+  <tr><td>비로그인 상태로 <code>/</code>, <code>/week</code> 접근</td><td>307 → <code>/login</code></td></tr>
+  <tr><td>비로그인 상태로 <code>/api/tasks</code> 호출</td><td>401</td></tr>
+  <tr><td>B 계정이 A 계정의 할 일 수정·삭제·완료 시도</td><td>모두 404, A의 데이터 불변</td></tr>
+  <tr><td>각 계정의 목록 조회</td><td>자기 것만 보임. 주인 없는 행은 양쪽 모두 안 보임</td></tr>
+  <tr><td>만료 토큰 / 위조 토큰</td><td>모두 거부</td></tr>
+  <tr><td>세션 쿠키</td><td>httpOnly, sameSite=Lax, <code>document.cookie</code>에 미노출</td></tr>
+  <tr><td>없는 이메일 vs 틀린 비밀번호</td><td>문구·소요시간 동일</td></tr>
+  <tr><td>첫 가입자의 기존 데이터 인수</td><td>롤백되는 트랜잭션 안에서 8건 전량 인수 확인</td></tr>
+</table>
+
+<h2><span class="n">6</span>운영</h2>
+
+<h3>6.1 배포</h3>
+
+<p><code>main</code> 브랜치에 푸시하면 Vercel이 자동 배포합니다. 평균 1–2분.
+빌드 명령은 <code>prisma generate &amp;&amp; next build</code>입니다.</p>
+
+<div class="box warn">
+  <span class="t">마이그레이션은 빌드에 포함되어 있지 않습니다</span>
+  <p>초기에 빌드 단계에서 <code>prisma migrate deploy</code>를 실행했다가 배포가 두 번
+  실패했습니다(빌드 환경에 DB 접속 정보가 없는 상태). 지금은 <strong>스키마 변경 시
+  사람이 직접</strong> 마이그레이션을 적용해야 합니다. 6.3을 따르십시오.</p>
+</div>
+
+<h3>6.2 환경변수</h3>
+
+<table>
+  <tr><th style="width:34%">이름</th><th>용도</th></tr>
+  <tr><td><code>DATABASE_URL</code></td>
+      <td>런타임용 <strong>풀링</strong> 연결. Vercel Storage에서 Neon을 추가하면 자동 설정</td></tr>
+  <tr><td><code>DATABASE_URL_UNPOOLED</code></td>
+      <td>마이그레이션 전용 <strong>직접</strong> 연결. <code>prisma migrate</code>는
+          세션 단위 연결이 필요해 풀러로는 동작하지 않음</td></tr>
+</table>
+
+<div class="box trap">
+  <span class="t">Vercel 환경변수는 빌드 시점에 고정됩니다</span>
+  <p>값을 바꾼 뒤 <strong>반드시 재배포</strong>해야 반영됩니다. 과거에
+  Neon 연동 시 접두사 설정을 잘못해 <code>DATABASE_URL_PGUSER</code> 같은 변수가 생기고,
+  동시에 빈 <code>DATABASE_URL</code>이 존재해 런타임 오류가 난 적이 있습니다.
+  값이 비어 있지 않은지, 이름이 정확한지 확인하십시오.</p>
+</div>
+
+<h3>6.3 스키마 변경 절차</h3>
+
+<p>운영 DB에 대해 <code>prisma migrate dev</code>를 실행하지 마십시오.
+스키마 불일치가 감지되면 <strong>데이터베이스 초기화를 제안</strong>하며,
+잘못 승인하면 전체 데이터가 사라집니다. 아래 절차를 쓰십시오.</p>
+
+<ol class="steps">
+  <li><code>prisma/schema.prisma</code>를 수정합니다.</li>
+  <li>적용하지 않고 SQL만 생성해 <strong>내용을 눈으로 확인</strong>합니다.
+      <code>DROP</code>·<code>DELETE</code>·<code>TRUNCATE</code>가 있으면 멈추십시오.
+      <pre><code>npx prisma migrate diff \
+  --from-url <span class="s">"$DATABASE_URL_UNPOOLED"</span> \
+  --to-schema-datamodel prisma/schema.prisma --script</code></pre></li>
+  <li>확인한 SQL을 <code>prisma/migrations/&lt;타임스탬프&gt;_&lt;이름&gt;/migration.sql</code>로 저장합니다.</li>
+  <li><code>npx prisma migrate deploy</code>로 적용합니다.</li>
+  <li><code>npx prisma generate</code>로 타입을 갱신하고 커밋합니다.</li>
+</ol>
+
+<p>기존 행이 있는 테이블에 <strong>필수 컬럼</strong>을 추가할 때는 곧바로
+<code>NOT NULL</code>로 만들 수 없습니다. ① nullable로 추가 → ② 기존 행 채우기 →
+③ <code>NOT NULL</code>로 조이기, 세 단계로 나누십시오.</p>
+
+<h3>6.4 자주 쓰는 명령</h3>
+
+<table>
+  <tr><th style="width:44%">명령</th><th>용도</th></tr>
+  <tr><td><code>npm run dev</code></td><td>개발 서버 (localhost:3000)</td></tr>
+  <tr><td><code>npx tsc --noEmit</code></td><td>타입 검사</td></tr>
+  <tr><td><code>npx eslint .</code></td><td>린트</td></tr>
+  <tr><td><code>npx next build</code></td><td>배포 전 최종 확인 — 푸시 전 반드시 실행</td></tr>
+  <tr><td><code>npx prisma studio</code></td><td>DB 내용을 브라우저에서 직접 확인·수정</td></tr>
+  <tr><td><code>npx prisma migrate deploy</code></td><td>마이그레이션 적용</td></tr>
+</table>
+
+<h2><span class="n">7</span>알려진 한계와 리스크</h2>
+
+<p class="lead">인수인계에서 가장 중요한 장입니다. 아래 항목은 전부 <strong>알고도 남겨둔</strong>
+것이며, 모르고 지나간 것이 아닙니다.</p>
+
+<table>
+  <tr><th style="width:24%">항목</th><th style="width:12%">심각도</th><th>내용과 영향</th></tr>
+  <tr>
+    <td>개발용 DB 미분리</td><td><span class="tag risk">높음</span></td>
+    <td>로컬 개발 서버가 <strong>운영 데이터베이스를 그대로</strong> 봅니다.
+        실제로 이 때문에 데이터 1건이 삭제되는 사고가 있었습니다(8장).
+        Neon 브랜치를 하나 만들어 로컬 <code>.env</code>가 그쪽을 보게 하는 것이
+        가장 시급한 조치입니다.</td>
+  </tr>
+  <tr>
+    <td>삭제 되돌리기 없음</td><td><span class="tag risk">높음</span></td>
+    <td>X 버튼은 <strong>즉시 영구 삭제</strong>입니다. 휴지통도 확인창도 없습니다.
+        스키마에 <code>archived</code> 컬럼이 이미 있으나 삭제에 쓰이지 않습니다.
+        삭제를 <code>archived = true</code>로 바꾸는 것만으로 대부분의 사고를 막을 수 있습니다.</td>
+  </tr>
+  <tr>
+    <td>비밀번호 재설정 없음</td><td><span class="tag risk">높음</span></td>
+    <td>메일 발송 수단이 없어 구현하지 않았습니다. 사용자가 비밀번호를 잊으면
+        <strong>운영자가 DB에서 직접 해시를 교체</strong>해야 합니다.
+        외부에 배포하기 전 반드시 해결해야 할 항목입니다.</td>
+  </tr>
+  <tr>
+    <td>로그인 시도 제한 없음</td><td>중간</td>
+    <td>무차별 대입 방어가 <code>scrypt</code>의 계산 비용뿐입니다.
+        사용자가 늘면 IP·계정 단위 제한이 필요합니다.</td>
+  </tr>
+  <tr>
+    <td>할 일 수정 기능 없음</td><td>중간</td>
+    <td>만들기·완료·날짜배치·삭제만 있습니다. 제목이나 시간을 고치려면
+        지우고 다시 만들어야 하며, 그 과정에서 완료 기록이 사라집니다.</td>
+  </tr>
+  <tr>
+    <td>자동 테스트 없음</td><td>중간</td>
+    <td>검증은 매번 일회용 스크립트로 수행하고 폐기했습니다. 회귀를 잡아줄
+        상시 테스트가 없어, 날짜 로직처럼 조용히 깨지는 부분이 위험합니다.</td>
+  </tr>
+  <tr>
+    <td>모바일 앱·알림 없음</td><td>중간</td>
+    <td>웹만 있습니다. 리텐션 장치가 연속 기록 하나뿐입니다.</td>
+  </tr>
+  <tr>
+    <td>정기 루틴 0건</td><td>낮음</td>
+    <td>현재 등록된 루틴이 없어 연속 기록과 연간 히트맵이 사실상 비어 있습니다.
+        기능 결함이 아니라 데이터 부재입니다.</td>
+  </tr>
+  <tr>
+    <td>세션 자동 연장 없음</td><td>낮음</td>
+    <td>30일 고정입니다. 만료되면 다시 로그인해야 합니다.</td>
+  </tr>
+  <tr>
+    <td>만료 세션 정리 없음</td><td>낮음</td>
+    <td>만료된 <code>Session</code> 행이 계속 쌓입니다. 조회 시 만료를 확인하므로
+        보안 문제는 아니고 용량 문제입니다.</td>
+  </tr>
+</table>
+
+<h2><span class="n">8</span>사고 기록: 데이터 1건 손실</h2>
+
+<p class="lead">같은 일이 반복되지 않도록 남깁니다. 인수인계 문서에서 사고 기록은
+기능 설명보다 오래 쓸모가 있습니다.</p>
+
+<table>
+  <tr><th style="width:16%">발생</th><td>2026-08-18, UI 모션 작업 검증 중</td></tr>
+  <tr><th>증상</th><td>할 일 8건 중 1건(<em>2차 합격자 부서 배치 확정</em>)이 사라짐</td></tr>
+  <tr><th>발견</th><td>로그인 작업 중 마이그레이션 후 건수를 확인하다가 7건인 것을 발견</td></tr>
+  <tr><th>원인</th><td>브라우저 자동화 검증을 <strong>운영 데이터베이스에 연결된</strong>
+      개발 서버에 대고 실행. 좌표 기반 마우스 조작이 의도치 않은 요소를 눌렀음</td></tr>
+  <tr><th>복구</th><td>원본이 Notion에 있어 복원. 생성 시각 간격이 다른 항목은 0.21초인데
+      해당 위치만 0.52초였던 점으로 누락 지점을 특정</td></tr>
+</table>
+
+<h3>왜 막지 못했나</h3>
+
+<p>같은 세션에서 <strong>이미 한 번 경고 신호가 있었습니다.</strong> 검증 중 생성된
+완료 기록 2건이 운영 DB에 들어간 것을 발견하고 삭제했지만, 그때 <em>증상만
+치우고 원인(테스트가 운영 DB를 본다)은 고치지 않았습니다.</em> 그 결과 다음 검증에서
+더 큰 손실이 발생했습니다.</p>
+
+<div class="box trap">
+  <span class="t">이 사고에서 가져갈 원칙</span>
+  <ul>
+    <li>운영 데이터에 대고 자동화 테스트를 돌리지 말 것. 이것이 유일한 근본 원인입니다.</li>
+    <li>좌표 기반 마우스 조작 대신 <strong>이름·역할 기반 선택자</strong>를 쓸 것.
+        레이아웃이 조금만 움직여도 엉뚱한 것을 누릅니다.</li>
+    <li>파괴적 작업 전후로 <strong>건수를 확인</strong>할 것.</li>
+    <li>같은 종류의 이상 징후가 두 번째 나타나면 증상이 아니라 원인을 고칠 것.</li>
+  </ul>
+</div>
+
+<p>현재는 로그인 기능 자체가 완충 역할을 합니다. 테스트 계정으로 로그인하면
+화면에 테스트 데이터만 보이고 실제 데이터는 소유자가 없어 조회조차 되지 않습니다.
+다만 이는 <strong>부수 효과일 뿐 근본 해결이 아니며</strong>, 개발용 DB 분리가 여전히 필요합니다.</p>
+
+<h2><span class="n">9</span>다음에 할 일</h2>
+
+<p class="lead">우선순위 순입니다. 위 세 가지는 성격상 <strong>기능 추가가 아니라
+사고 예방</strong>입니다.</p>
+
+<h3>즉시</h3>
+<ol class="steps">
+  <li><strong>제작자 본인 계정 가입.</strong> 기존 8건이 첫 가입자에게 귀속됩니다.
+      아직 계정이 0개이므로 다른 사람이 먼저 가입하면 그 사람에게 갑니다.</li>
+  <li><strong>개발용 DB 분리.</strong> Neon 대시보드에서 브랜치를 하나 만들고
+      로컬 <code>.env</code>가 그것을 보게 합니다. 8장 사고의 근본 원인입니다.</li>
+  <li><strong>삭제를 보관 처리로 변경.</strong> 이미 있는 <code>archived</code> 컬럼을 사용하면
+      화면에서만 사라지고 데이터는 남습니다.</li>
+</ol>
+
+<h3>외부에 공개하기 전</h3>
+<ol class="steps">
+  <li><strong>비밀번호 재설정.</strong> 메일 발송 수단(예: Resend) 연동이 필요합니다.</li>
+  <li><strong>로그인 시도 제한.</strong></li>
+  <li><strong>할 일 수정 기능.</strong> 지우고 다시 만들면 완료 기록이 사라지므로
+      사용자 입장에서 손실이 큽니다.</li>
+  <li><strong>핵심 로직 자동 테스트.</strong> 최소한 <code>lib/task-utils.ts</code>와
+      <code>lib/gamification.ts</code>는 순수 함수라 테스트가 쉽습니다.</li>
+</ol>
+
+<h3>제품을 키우려면</h3>
+<ol class="steps">
+  <li><strong>과적 방지의 전면화.</strong> 하루 용량이 넘칠 때 실제로 경고하거나
+      말리는 동작. 이 앱의 유일한 차별점이며 현재는 숫자로만 표시됩니다.</li>
+  <li><strong>미배치 항목 드래그 배치.</strong> 지금은 클릭 방식입니다.</li>
+  <li><strong>모바일 대응(PWA)과 알림.</strong></li>
+  <li><strong>그룹 연속 기록.</strong> 혼자 쓰는 기록은 이탈 비용이 없습니다.
+      함께하는 사람이 생기면 그때부터 방어 가능한 해자가 됩니다.</li>
+</ol>
+
+<hr>
+
+<p style="color:#63635e;font-size:9.6pt">
+이 문서는 커밋 <code>20e1b7e</code> 기준입니다. 코드가 바뀌면 이 문서도 함께
+갱신하십시오. 특히 3장(핵심 설계 결정)과 7장(한계)은 사실과 어긋나는 순간
+문서 전체의 신뢰가 사라집니다. 코드와 다른 설명은 없는 것보다 나쁩니다.
+</p>
+
+</body>
+</html>
