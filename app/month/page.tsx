@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/dal";
 import {
   addMonths,
   daySummary,
@@ -31,8 +32,10 @@ export default async function MonthPage({ searchParams }: PageProps) {
   const gridStart = grid[0];
   const gridEnd = grid[grid.length - 1];
 
+  const user = await requireUser();
+
   const tasks = await prisma.task.findMany({
-    where: { archived: false },
+    where: { archived: false, userId: user.id },
     include: {
       completions: { where: { date: { gte: gridStart, lte: gridEnd } } },
     },

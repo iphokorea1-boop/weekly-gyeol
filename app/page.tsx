@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/dal";
 import {
   capacityPercent,
   formatKo,
@@ -35,8 +36,10 @@ function SectionHeading({ title, count }: { title: string; count: number }) {
 }
 
 export default async function Home() {
+  const user = await requireUser();
+
   const tasks = await prisma.task.findMany({
-    where: { archived: false },
+    where: { archived: false, userId: user.id },
     include: { completions: true },
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
   });

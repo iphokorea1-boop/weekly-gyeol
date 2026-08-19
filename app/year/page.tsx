@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/dal";
 import {
   daySummary,
   formatMonthISO,
@@ -34,10 +35,12 @@ export default async function YearPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const year = parseYearParam(params.year);
 
+  const user = await requireUser();
+
   // Achievements and streaks span the user's whole history, so completions are
   // fetched unfiltered; the heatmap only ever asks about dates inside `year`.
   const tasks = await prisma.task.findMany({
-    where: { archived: false },
+    where: { archived: false, userId: user.id },
     include: { completions: true },
   });
 

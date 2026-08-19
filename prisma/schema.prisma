@@ -8,6 +8,35 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+model User {
+  id           String   @id @default(cuid())
+  // Stored lower-cased and trimmed so the unique constraint actually prevents
+  // "A@x.com" and "a@x.com" becoming two accounts.
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  tasks    Task[]
+  sessions Session[]
+}
+
+// Opaque server-side sessions rather than a signed JWT: they can be revoked,
+// they need no signing secret to configure, and the pages already query the
+// database on every request so the extra lookup is close to free.
+model Session {
+  id        String   @id @default(cuid())
+  // Only the SHA-256 of the cookie value is stored, so a leaked database
+  // dump cannot be replayed as a live session.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 // A single Task row covers all three kinds shown in the weekly view:
 // - dueDate set, weekdays null  -> dated task
 // - weekdays set                -> recurring routine (dueDate ignored)
@@ -25,7 +54,12 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   completions TaskCompletion[]
+
+  @@index([userId])
 }
 
 model TaskCompletion {

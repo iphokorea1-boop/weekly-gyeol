@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/dal";
 import {
   addDays,
   capacityPercent,
@@ -45,8 +46,10 @@ export default async function WeekPage({ searchParams }: PageProps) {
   const weekEnd = addDays(weekStart, 6);
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
+  const user = await requireUser();
+
   const tasks = await prisma.task.findMany({
-    where: { archived: false },
+    where: { archived: false, userId: user.id },
     include: { completions: true },
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
   });

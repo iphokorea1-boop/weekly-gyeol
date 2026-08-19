@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/dal";
 import { toDateOnly } from "@/lib/task-utils";
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const tasks = await prisma.task.findMany({
-    where: { archived: false },
+    where: { archived: false, userId: user.id },
     include: { completions: true },
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
   });
@@ -12,6 +16,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const body = await req.json();
   const { title, memo, dueDate, startTime, endTime, weekdays, priority } = body;
 
@@ -30,6 +37,8 @@ export async function POST(req: NextRequest) {
       endTime: endTime || null,
       weekdays: weekdays || null,
       priority: typeof priority === "number" ? priority : 0,
+      // Ownership comes from the session, never from the request body.
+      userId: user.id,
     },
   });
 
