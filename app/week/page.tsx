@@ -17,6 +17,7 @@ import {
   todayInSeoul,
   toDateOnly,
 } from "@/lib/task-utils";
+import { holidayMap } from "@/lib/holidays";
 import { xpFor } from "@/lib/gamification";
 import TaskBlock from "@/app/components/task-block";
 import TaskItem, { type TaskItemData } from "@/app/components/task-item";
@@ -61,6 +62,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
     return d >= weekStart && d <= weekEnd;
   });
   const floating = tasks.filter((t) => taskKind(t) === "floating");
+  const holidaysByDate = holidayMap(weekStart, weekEnd);
 
   const doneOn = (t: (typeof tasks)[number], date: Date) =>
     t.completions.some((c) => isSameDay(new Date(c.date), date));
@@ -94,6 +96,7 @@ export default async function WeekPage({ searchParams }: PageProps) {
       date,
       timedEvents,
       allDayDated,
+      holidays: holidaysByDate.get(formatDateISO(date)) ?? [],
       capacity: capacityPercent([...dayRoutines, ...timedDated]),
     };
   });
@@ -171,25 +174,38 @@ export default async function WeekPage({ searchParams }: PageProps) {
               style={{ gridTemplateColumns: "44px repeat(7, 1fr)" }}
             >
               <div />
-              {days.map(({ date, capacity }) => {
+              {days.map(({ date, capacity, holidays }) => {
                 const isToday = isSameDay(date, today);
+                const isHoliday = holidays.length > 0;
                 return (
                   <div
                     key={date.toISOString()}
                     className={`border-r border-border px-2 py-2.5 text-center last:border-r-0 ${
-                      isToday ? "bg-dated-soft" : ""
+                      isToday
+                        ? "bg-dated-soft"
+                        : isHoliday
+                          ? "bg-holiday-soft"
+                          : ""
                     }`}
                   >
                     <div
                       className={`text-[11px] font-bold tracking-wide ${
-                        isToday ? "text-dated-ink" : "text-ink-faint"
+                        isToday
+                          ? "text-dated-ink"
+                          : isHoliday
+                            ? "text-holiday"
+                            : "text-ink-faint"
                       }`}
                     >
                       {formatKo(date, { weekday: "short" })}
                     </div>
                     <div
                       className={`mt-0.5 text-[15px] font-bold tabular-nums ${
-                        isToday ? "text-dated-ink" : ""
+                        isToday
+                          ? "text-dated-ink"
+                          : isHoliday
+                            ? "text-holiday"
+                            : ""
                       }`}
                     >
                       {date.getUTCDate()}
@@ -214,7 +230,9 @@ export default async function WeekPage({ searchParams }: PageProps) {
               <div className="flex items-center justify-center border-r border-border text-[10px] text-ink-faint">
                 종일
               </div>
-              {days.map(({ date, allDayDated }) => (
+              {/* A holiday is an all-day event, so it belongs in this row
+                  rather than as a fourth line in the already-dense header. */}
+              {days.map(({ date, allDayDated, holidays }) => (
                 <div
                   key={date.toISOString()}
                   // min-w-0: grid items default to min-width:auto, so a long
@@ -223,6 +241,14 @@ export default async function WeekPage({ searchParams }: PageProps) {
                   // the neighbouring day.
                   className="flex min-h-[34px] min-w-0 flex-col gap-1 border-r border-border p-1.5 last:border-r-0"
                 >
+                  {holidays.map((h) => (
+                    <span
+                      key={h.name}
+                      className="truncate rounded-md border-l-[3px] border-holiday bg-holiday-soft px-1.5 py-0.5 text-[11px] font-semibold text-holiday"
+                    >
+                      {h.name}
+                    </span>
+                  ))}
                   {allDayDated.map((t) => (
                     <span
                       key={t.id}

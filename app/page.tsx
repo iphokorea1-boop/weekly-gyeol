@@ -10,6 +10,7 @@ import {
   todayInSeoul,
   toDateOnly,
 } from "@/lib/task-utils";
+import { holidayLabel, holidaysOn } from "@/lib/holidays";
 import { computeStreaks, totalXp, xpFor } from "@/lib/gamification";
 import TaskItem, { type TaskItemData } from "@/app/components/task-item";
 import AddTaskForm from "@/app/components/add-task-form";
@@ -45,6 +46,7 @@ export default async function Home() {
   });
 
   const today = todayInSeoul();
+  const todayHolidays = holidaysOn(today);
 
   const routines = tasks.filter(
     (t) => taskKind(t) === "routine" && routineOccursOn(t.weekdays, today)
@@ -110,7 +112,16 @@ export default async function Home() {
           <h1 className="text-2xl font-extrabold tracking-tight text-balance">
             오늘
           </h1>
-          <p className="mt-1 text-sm text-ink-soft">{formatToday(today)}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft">
+            <span className={todayHolidays.length > 0 ? "text-holiday" : ""}>
+              {formatToday(today)}
+            </span>
+            {todayHolidays.length > 0 && (
+              <span className="rounded-full border border-holiday-line bg-holiday-soft px-2 py-0.5 text-[11px] font-semibold text-holiday">
+                {holidayLabel(todayHolidays)}
+              </span>
+            )}
+          </p>
         </div>
         <p className="flex-none text-right text-xs text-ink-faint">
           <span className="font-semibold tabular-nums text-foreground">

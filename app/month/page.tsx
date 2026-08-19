@@ -17,6 +17,7 @@ import {
   weekdayLabel,
   weekdayOf,
 } from "@/lib/task-utils";
+import { hasLunarData, holidayMap } from "@/lib/holidays";
 import PeriodNav from "@/app/components/period-nav";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,9 @@ export default async function MonthPage({ searchParams }: PageProps) {
   const grid = getMonthGrid(monthStart);
   const gridStart = grid[0];
   const gridEnd = grid[grid.length - 1];
+  // Public holidays are computed, not stored — see lib/holidays.ts.
+  const holidays = holidayMap(gridStart, gridEnd);
+  const lunarKnown = hasLunarData(monthStart.getUTCFullYear());
 
   const user = await requireUser();
 
@@ -106,6 +110,8 @@ export default async function MonthPage({ searchParams }: PageProps) {
               {week.map((date) => {
                 const inMonth = date.getUTCMonth() === monthStart.getUTCMonth();
                 const isToday = isSameDay(date, today);
+                const dayHolidays = holidays.get(formatDateISO(date)) ?? [];
+                const isHoliday = dayHolidays.length > 0;
                 const dated = tasks.filter(
                   (t) =>
                     taskKind(t) === "dated" &&
@@ -126,17 +132,37 @@ export default async function MonthPage({ searchParams }: PageProps) {
                     href={`/week?week=${formatDateISO(date)}`}
                     className={`pressable press-soft flex min-h-[104px] min-w-0 flex-col gap-1 border-r border-border p-1.5 last:border-r-0 hover:bg-surface-sunk ${
                       inMonth ? "" : "opacity-45"
-                    } ${isToday ? "bg-dated-soft/40" : ""}`}
+                    } ${
+                      isToday
+                        ? "bg-dated-soft/40"
+                        : isHoliday
+                          ? "bg-holiday-soft/50"
+                          : ""
+                    }`}
                   >
                     <span
                       className={`grid h-5 w-5 place-items-center rounded-full text-xs font-bold tabular-nums ${
-                        isToday ? "bg-dated text-white" : ""
+                        isToday
+                          ? "bg-dated text-white"
+                          : isHoliday
+                            ? "text-holiday"
+                            : ""
                       }`}
                     >
                       {date.getUTCDate()}
                     </span>
 
                     <div className="flex flex-col gap-1">
+                      {/* Holidays sit above the day's own tasks: they're the
+                          context you read the rest of the cell against. */}
+                      {dayHolidays.map((h) => (
+                        <span
+                          key={h.name}
+                          className="truncate rounded-md border-l-[3px] border-holiday bg-holiday-soft px-1.5 py-0.5 text-[11px] font-semibold text-holiday"
+                        >
+                          {h.name}
+                        </span>
+                      ))}
                       {dated.slice(0, MAX_CHIPS_PER_DAY).map((t) => {
                         const done = isDoneOn(t, date);
                         return (
@@ -181,8 +207,18 @@ export default async function MonthPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      <footer className="text-center text-[11px] text-ink-faint">
-        날짜를 누르면 그 주의 시간표로 이동합니다 · 칸 아래 막대 = 그날 루틴 완료율
+      <footer className="flex flex-col items-center gap-1 text-center text-[11px] text-ink-faint">
+        <span>
+          날짜를 누르면 그 주의 시간표로 이동합니다 · 칸 아래 막대 = 그날 루틴 완료율
+        </span>
+        {/* Saying nothing here would quietly turn a missing 추석 into "there is
+            no 추석 that year". */}
+        {!lunarKnown && (
+          <span className="text-holiday">
+            {monthStart.getUTCFullYear()}년은 음력 공휴일(설날 · 추석 ·
+            부처님오신날) 자료가 없어 양력 공휴일만 표시됩니다
+          </span>
+        )}
       </footer>
     </div>
   );

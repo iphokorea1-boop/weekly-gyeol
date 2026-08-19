@@ -42,6 +42,12 @@
   --floating-soft: #e0f8f3; /* teal-3  */
   --floating-line: #83cdc1; /* teal-7  */
 
+  /* red → 공휴일. The one hue in the palette that isn't a task kind; a Korean
+     calendar reads red as "쉬는 날" before it reads any label. */
+  --holiday: #ce2c31; /* red-11 */
+  --holiday-soft: #ffefef; /* red-3  */
+  --holiday-line: #f3aeaf; /* red-7  */
+
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--surface);
@@ -92,6 +98,10 @@
     --floating-soft: #0d2d2a;
     --floating-line: #1c6961;
 
+    --holiday: #ff9592; /* red-11 dark */
+    --holiday-soft: #3b1219; /* red-3 dark  */
+    --holiday-line: #b54548; /* red-7 dark  */
+
     --primary-foreground: #ffffff;
     --destructive: #ff6369;
 
@@ -130,6 +140,10 @@
   --floating-soft: #0d2d2a;
   --floating-line: #1c6961;
 
+  --holiday: #ff9592;
+  --holiday-soft: #3b1219;
+  --holiday-line: #b54548;
+
   --primary-foreground: #ffffff;
   --destructive: #ff6369;
 
@@ -162,6 +176,9 @@
   --color-floating-ink: var(--floating-ink);
   --color-floating-soft: var(--floating-soft);
   --color-floating-line: var(--floating-line);
+  --color-holiday: var(--holiday);
+  --color-holiday-soft: var(--holiday-soft);
+  --color-holiday-line: var(--holiday-line);
 
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);

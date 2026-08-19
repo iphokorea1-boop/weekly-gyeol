@@ -7,6 +7,7 @@ import {
   isSameDay,
   weekdayLabel,
 } from "@/lib/task-utils";
+import { holidayLabel, holidayMap } from "@/lib/holidays";
 
 // Compact month for orientation in the weekly view: shows where the displayed
 // week sits in the month and jumps to any other week.
@@ -21,6 +22,7 @@ export default function MiniMonth({
 }) {
   const grid = getMonthGrid(monthStart);
   const weekEnd = addDays(weekStart, 6);
+  const holidays = holidayMap(grid[0], grid[grid.length - 1]);
 
   return (
     // Capped: below the lg breakpoint this drops out of its 248px column and
@@ -45,13 +47,24 @@ export default function MiniMonth({
           const inWeek = date >= weekStart && date <= weekEnd;
           const inMonth = date.getUTCMonth() === monthStart.getUTCMonth();
           const isToday = isSameDay(date, today);
+          const dayHolidays = holidays.get(formatDateISO(date)) ?? [];
 
           return (
             <Link
               key={date.toISOString()}
               href={`/week?week=${formatDateISO(date)}`}
+              title={holidayLabel(dayHolidays) || undefined}
+              // Text colour is one ternary chain rather than several classes:
+              // two competing `text-*` utilities are resolved by their order in
+              // the generated stylesheet, which nothing here controls.
               className={`pressable press-deep grid aspect-square place-items-center rounded-md text-[10px] font-semibold tabular-nums ${
-                inWeek ? "bg-dated-soft text-dated-ink" : "hover:bg-surface-sunk"
+                inWeek ? "bg-dated-soft" : "hover:bg-surface-sunk"
+              } ${
+                dayHolidays.length > 0
+                  ? "text-holiday"
+                  : inWeek
+                    ? "text-dated-ink"
+                    : ""
               } ${inMonth ? "" : "opacity-35"} ${
                 isToday ? "ring-1 ring-dated" : ""
               }`}

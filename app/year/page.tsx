@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/dal";
 import {
   daySummary,
+  formatDateISO,
   formatMonthISO,
   getMonthEnd,
   isSameDay,
@@ -12,6 +13,7 @@ import {
   todayInSeoul,
   weekdayLabel,
 } from "@/lib/task-utils";
+import { holidayLabel, holidayMap } from "@/lib/holidays";
 import { computeAchievements, computeStreaks } from "@/lib/gamification";
 import PeriodNav from "@/app/components/period-nav";
 import AchievementGrid from "@/app/components/achievement-grid";
@@ -48,6 +50,10 @@ export default async function YearPage({ searchParams }: PageProps) {
   const { current: streak, longest } = computeStreaks(tasks, today);
   const achievements = computeAchievements(tasks, today);
 
+  // The heatmap stays about completion, so holidays only reach the tooltip —
+  // colouring 19 squares red would compete with the scale that carries meaning.
+  const holidays = holidayMap(makeDate(year, 0, 1), makeDate(year, 11, 31));
+
   const months = Array.from({ length: 12 }, (_, m) => {
     const monthStart = makeDate(year, m, 1);
     const days = Array.from(
@@ -61,6 +67,7 @@ export default async function YearPage({ searchParams }: PageProps) {
           total: future ? 0 : items.length,
           done: future ? 0 : done,
           future,
+          holiday: holidayLabel(holidays.get(formatDateISO(date)) ?? []),
         };
       }
     );
@@ -139,10 +146,12 @@ export default async function YearPage({ searchParams }: PageProps) {
                 <span key={`lead-${i}`} />
               ))}
 
-              {days.map(({ date, total, done, future }) => (
+              {days.map(({ date, total, done, future, holiday }) => (
                 <span
                   key={date.toISOString()}
-                  title={`${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일 · ${
+                  title={`${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일${
+                    holiday ? ` · ${holiday}` : ""
+                  } · ${
                     future
                       ? "예정"
                       : total === 0
