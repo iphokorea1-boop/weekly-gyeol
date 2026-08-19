@@ -106,6 +106,7 @@ npx prisma generate</code></pre></li>
 ├─ lib/                    <span class="c"># 화면과 무관한 순수 로직</span>
 │  ├─ task-utils.ts        <span class="c"># 날짜·시간 계산 (매우 중요)</span>
 │  ├─ gamification.ts      <span class="c"># 연속 기록·XP·배지 계산</span>
+│  ├─ holidays.ts          <span class="c"># 공휴일 계산 (DB를 쓰지 않음)</span>
 │  ├─ auth.ts              <span class="c"># 비밀번호와 세션</span>
 │  ├─ dal.ts               <span class="c"># "지금 로그인한 사람이 누구인가"</span>
 │  └─ prisma.ts            <span class="c"># 데이터베이스 연결</span>
@@ -133,6 +134,7 @@ npx prisma generate</code></pre></li>
   <tr><td>할 일 추가 폼</td><td><code>app/components/add-task-form.tsx</code></td></tr>
   <tr><td>연속 기록·XP·배지 규칙</td><td><code>lib/gamification.ts</code></td></tr>
   <tr><td>날짜 계산</td><td><code>lib/task-utils.ts</code></td></tr>
+  <tr><td>공휴일 추가·수정 (2031년 이후 등)</td><td><code>lib/holidays.ts</code>의 <code>LUNAR</code> 표</td></tr>
   <tr><td>데이터베이스에 컬럼 추가</td><td><code>prisma/schema.prisma</code> (5.4 참고)</td></tr>
   <tr><td>로그인 화면</td><td><code>app/components/auth-form.tsx</code></td></tr>
 </table>

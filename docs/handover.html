@@ -115,7 +115,7 @@
 
 <h2><span class="n">2</span>개발 연혁</h2>
 
-<p class="lead">커밋 12개, 이틀. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
+<p class="lead">커밋 14개. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
 과거 결정의 맥락을 추적할 때 이 표에서 커밋 해시를 찾아 <code>git show</code>로 보십시오.</p>
 
 <table>
@@ -144,6 +144,13 @@
       <td>계정·세션 도입. 동시에 <strong>IDOR 취약점</strong> 차단</td></tr>
   <tr><td><code>20e1b7e</code></td><td>Let password managers recognise the sign-in form</td>
       <td>아이디 칸의 <code>autocomplete</code> 토큰 교정</td></tr>
+  <tr><td><code>753c3d9</code></td><td>Document the project for handover and for a first-time reader</td>
+      <td>이 문서와 코드 안내서. 작성 중 <code>.env.example</code>에
+          <code>DATABASE_URL_UNPOOLED</code>가 빠져 있어 첫 마이그레이션에서
+          막히는 문제를 발견·수정</td></tr>
+  <tr><td><code>efb6251</code></td><td>Show Korean public holidays on every calendar view</td>
+      <td>공휴일이 화면에 전혀 없어 쉬는 날 위에 일정을 잡게 됨. 저장하지 않고
+          계산하는 방식으로 추가(3.9)</td></tr>
 </table>
 
 <div class="box tip">
@@ -353,6 +360,32 @@
   <code>--ease-spring</code>, <code>.pressable</code>, <code>.lift</code>,
   <code>--shadow-rest / raised / pressed</code>. <code>prefers-reduced-motion</code>
   블록도 같은 파일 하단에 있으니 새 애니메이션을 추가하면 거기에도 등록하십시오.</p>
+</div>
+
+<h3>3.9 공휴일은 저장하지 않고 계산한다</h3>
+
+<p>광복절·추석 같은 공휴일을 <code>Task</code> 행으로 만들지 않았습니다. 만들었다면
+체크와 삭제가 가능해지고, XP와 연속 기록에 섞여 들어가며, 계정이 하나 늘 때마다
+같은 날짜가 통째로 복제됩니다. 대신 <code>lib/holidays.ts</code>는 <strong>연도만
+주면 결과가 나오는 순수 함수</strong>이고 데이터베이스를 전혀 쓰지 않습니다.
+과거·미래 어느 연도든 마이그레이션 없이 바로 나옵니다.</p>
+
+<p>양력 공휴일은 규칙으로 계산합니다. 음력에서 오는 셋(설날·부처님오신날·추석)만
+<strong>2024–2030년 표</strong>로 두었습니다. 정확한 음력→양력 변환에는 한국천문
+연구원이 발표하는 삭(朔) 시각 자료가 필요한데, 직접 구현하면 코드가 몇 배로 늘고
+어느 해 하루가 틀려도 알아차릴 방법이 없습니다. 표는 틀리면 눈에 보입니다.</p>
+
+<p>대체공휴일은 「관공서의 공휴일에 관한 규정」 제3조를 그대로 옮겼습니다. 대부분은
+<strong>토·일과 겹칠 때</strong>, 설·추석 연휴는 <strong>일요일과 겹칠 때만</strong>,
+어린이날은 여기에 더해 <strong>다른 공휴일과 겹칠 때도</strong> 생깁니다. 일요일은
+제2조가 그 자체를 공휴일로 정하고 있어 대체휴일이 될 수 없으며, 그래서 2027년
+한글날(토 10/9)의 대체휴일은 일요일 10/10이 아니라 월요일 10/11입니다.</p>
+
+<div class="box warn">
+  <span class="t">되돌리면 깨지는 것</span>
+  <p>표를 지우고 규칙만 남기면 <strong>설날과 추석이 통째로 사라집니다</strong>.
+  반대로 공휴일을 <code>Task</code>로 옮기면 공휴일 덕분에 연속 기록이 올라가고,
+  사용자가 공휴일을 삭제할 수 있게 됩니다.</p>
 </div>
 
 <h2><span class="n">4</span>시스템 구조</h2>
@@ -628,6 +661,13 @@
     <td>정기 루틴 0건</td><td>낮음</td>
     <td>현재 등록된 루틴이 없어 연속 기록과 연간 히트맵이 사실상 비어 있습니다.
         기능 결함이 아니라 데이터 부재입니다.</td>
+  </tr>
+  <tr>
+    <td>음력 공휴일 2030년까지</td><td>낮음</td>
+    <td>설날·부처님오신날·추석은 <code>lib/holidays.ts</code>의 표에
+        <strong>2024–2030년만</strong> 들어 있습니다. 2031년 이후를 열면 양력
+        공휴일만 나오며, 그 사실이 월간 화면 하단에 표시되므로 조용히 틀리지는
+        않습니다. 표에 연도를 추가하면 해결됩니다.</td>
   </tr>
   <tr>
     <td>세션 자동 연장 없음</td><td>낮음</td>
