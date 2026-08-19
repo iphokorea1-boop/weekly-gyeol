@@ -12,8 +12,8 @@
  *            quietest hue; a vivid one turns the week grid into a highlighter
  *   indigo → 날짜 있는 할 일 — the appointments that actually need attention
  *   teal   → 언젠가 할 일
- * shadcn's tokens are driven from the same values so its components inherit
- * the theme instead of carrying a second palette.
+ * shadcn's tokens are driven from the same values, so any component added
+ * later inherits this theme instead of arriving with a second palette.
  */
 :root {
   --radius: 0.75rem;

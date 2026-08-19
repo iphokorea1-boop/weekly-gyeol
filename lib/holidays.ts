@@ -73,14 +73,6 @@ const LUNAR: Record<number, LunarAnchors> = {
   2030: { seollal: [1, 3], buddha: [4, 9], chuseok: [8, 12] },
 };
 
-const LUNAR_YEARS = Object.keys(LUNAR).map(Number);
-
-/** 음력 공휴일까지 계산할 수 있는 연도의 범위. */
-export const LUNAR_DATA_RANGE = {
-  min: Math.min(...LUNAR_YEARS),
-  max: Math.max(...LUNAR_YEARS),
-};
-
 /** 설·추석·부처님오신날까지 계산 가능한 연도인지. */
 export function hasLunarData(year: number): boolean {
   return year in LUNAR;

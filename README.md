@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 주간결
 
-## Getting Started
+주간 단위로 시간을 설계하는 개인 일정 관리 앱.
 
-First, run the development server:
+**배포:** https://weekly-gyeol.vercel.app
+
+## 핵심 개념: 세 가지 분류
+
+이 앱의 화면과 데이터 모델은 전부 이 구분 위에 서 있습니다.
+
+| 분류 | 뜻 | 데이터 |
+|---|---|---|
+| **정기 루틴** | 매주 반복되는 일 | `weekdays` (예: `"1,3,5"`) |
+| **날짜 있는 할 일** | 특정 날짜의 약속 | `dueDate` |
+| **언젠가 할 일** | 아직 날짜를 정하지 않은 것 | 둘 다 없음 |
+
+세 번째가 이 앱의 이유입니다. 할 일 앱은 날짜 없는 항목을 목록 아래에 쌓아두기만 하는데,
+여기서는 **미배치함**에 모아두고 주간 시간표로 끌어다 놓아 실제로 시간을 배정합니다.
+
+## 문서
+
+코드를 만지기 전에 읽으십시오. 둘 다 `docs/`에 PDF와 HTML 원본이 함께 있습니다.
+
+| 문서 | 대상 |
+|---|---|
+| [주간결-인수인계-문서.pdf](docs/주간결-인수인계-문서.pdf) | 무엇을 만들었고, **왜 그렇게 만들었으며**, 지금 무엇이 위험한가 |
+| [주간결-코드-안내서.pdf](docs/주간결-코드-안내서.pdf) | Next.js를 처음 보는 사람이 코드를 읽고 고치는 법 |
+
+## 기술 스택
+
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
+Prisma + Neon(PostgreSQL) · Vercel
+
+인증은 외부 서비스 없이 직접 구현했습니다 (`scrypt` 해시 + DB 세션).
+
+## 시작하기
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env      # Neon 연결 문자열 두 개를 채웁니다
+npm install
+npx prisma migrate deploy # 스키마 적용
+npm run dev               # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env`에는 **연결 문자열이 두 개** 필요합니다. `DATABASE_URL`(풀링, 앱 실행용)과
+`DATABASE_URL_UNPOOLED`(직결, 마이그레이션 전용)입니다. 두 번째가 없으면 첫
+마이그레이션에서 막힙니다. 자세한 설명은 `.env.example`에 있습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 명령
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| 명령 | 용도 |
+|---|---|
+| `npm run dev` | 개발 서버 |
+| `npm run build` | 프로덕션 빌드 (푸시 전 반드시 실행) |
+| `npx tsc --noEmit` | 타입 검사 |
+| `npx eslint .` | 린트 |
+| `npm run db:migrate` | 마이그레이션 적용 |
+| `npx prisma studio` | DB 내용을 브라우저에서 직접 확인 |
+| `npx tsx <파일>` | 일회성 유지보수 스크립트 실행 |
 
-## Learn More
+## 지금 알아야 할 것
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **데이터베이스가 하나뿐입니다.** 로컬 개발 서버도 운영 DB를 그대로 봅니다.
+  이것 때문에 실제로 데이터가 한 건 삭제된 적이 있습니다(인수인계 문서 8장).
+  Neon 브랜치를 만들어 분리하는 것이 가장 시급한 과제입니다.
+- **삭제에 되돌리기가 없습니다.** X 버튼은 즉시 영구 삭제입니다.
+- 그 밖의 알려진 한계는 인수인계 문서 7장에 심각도와 함께 정리되어 있습니다.

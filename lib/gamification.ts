@@ -104,16 +104,6 @@ export function totalXp(tasks: GamifiedTask[]): number {
   );
 }
 
-export function xpInRange(tasks: GamifiedTask[], from: Date, to: Date): number {
-  return tasks.reduce((sum, t) => {
-    const hits = t.completions.filter((c) => {
-      const d = toDateOnly(new Date(c.date));
-      return d >= from && d <= to;
-    }).length;
-    return sum + hits * xpFor(t.priority);
-  }, 0);
-}
-
 export type Achievement = {
   id: string;
   name: string;
