@@ -115,7 +115,7 @@
 
 <h2><span class="n">2</span>개발 연혁</h2>
 
-<p class="lead">커밋 16개. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
+<p class="lead">커밋 17개. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
 과거 결정의 맥락을 추적할 때 이 표에서 커밋 해시를 찾아 <code>git show</code>로 보십시오.</p>
 
 <table>
@@ -154,6 +154,9 @@
   <tr><td><code>408c373</code></td><td>Let tasks be dragged around the calendar</td>
       <td>일정을 옮기려면 지우고 다시 만들어야 했고 그때 완료 기록이 사라짐.
           포인터 기반 드래그 도입(3.10)</td></tr>
+  <tr><td><code>925acef</code></td><td>Email an account that has gone quiet for a few days</td>
+      <td>며칠 활동이 없으면 Vercel 크론이 메일로 알림. 같은 날 개발용 DB를
+          분리했고, 그 계기는 8.2의 사고</td></tr>
   <tr><td><code>123d753</code></td><td>Remove a seed script that would have wiped the live database</td>
       <td>중간 점검. <code>db:seed</code>가 필터 없이 전체를 지우고 있었음.
           그 외 미사용 코드·자산 정리와 <code>README.md</code> 재작성</td></tr>
@@ -423,6 +426,43 @@
   옮긴 할 일이 완료 처리됩니다.</p>
 </div>
 
+<h3>3.11 촉진 메일은 설정하기 전까지 아무 일도 하지 않는다</h3>
+
+<p>며칠 활동이 없으면 메일을 보냅니다. 본문이 "돌아오세요"로 시작하지 않고
+<strong>기한이 지난 할 일의 제목</strong>부터 보여줍니다. 앞의 문장은 스팸과
+구분이 안 되지만, 밀린 항목 두 개를 이름으로 부르는 메일은 앱을 열 이유가
+됩니다.</p>
+
+<p>메일 발송은 Resend의 REST API를 <code>fetch</code>로 직접 부릅니다. SDK를 쓰지
+않아 의존성이 늘지 않으며, <code>lib/auth.ts</code>가 인증 라이브러리를 쓰지 않는
+것과 같은 이유입니다. <code>lib/mailer.ts</code>는 <strong>예외를 던지지
+않습니다.</strong> 메일 업체는 어떤 기능에서든 가장 자주 고장나는 부분이라,
+모든 결과를 값으로 돌려주어 업체 장애가 작업 전체를 끌어내리지 못하게 했습니다.</p>
+
+<p>키가 없으면 기능 전체가 <strong>조용히 쉽니다.</strong>
+<code>RESEND_API_KEY</code>가 없으면 "미설정"이라고 보고하고 아무것도 보내지
+않으며, <code>CRON_SECRET</code>이 없으면 엔드포인트가 503으로 스스로를 막습니다.
+설정 전에 배포해도 아무 일도 일어나지 않는다는 뜻입니다.</p>
+
+<p>조용한 기간은 <strong>서울 달력 날짜</strong>로 셉니다. "3일째 안 들어왔다"는
+달력에 대한 진술이고, 경과 시간으로 재면 마지막 방문이 몇 시였느냐에 따라 답이
+달라집니다.</p>
+
+<p><code>lastActiveAt</code>은 데이터 접근 계층에서 <code>after()</code>로
+기록합니다. 응답이 나간 뒤에 실행되므로 사용자가 기다리는 페이지에 지연을 더하지
+않습니다. 한 시간에 한 번으로 제한하는데, 없으면 모든 페이지 조회와 프리페치마다
+쓰기가 발생합니다.</p>
+
+<div class="box why">
+  <span class="t">수신 거부가 버튼 뒤에 있는 이유</span>
+  <p>메일 속 링크는 GET이지만 <strong>제안만 합니다.</strong> 실제 전환은 버튼
+  뒤의 POST가 합니다. 메일 스캐너와 링크 미리보기는 본문의 모든 URL을 열어보기
+  때문에, GET이 곧바로 작동하면 <strong>독자 대신 스캐너가 수신 거부를 눌러버립니다.</strong>
+  다시 켜는 화면이 앱 어디에도 없으므로 되돌릴 방법도 없었을 것입니다.
+  링크 서명에는 그 계정의 비밀번호 해시를 키로 씁니다. 새 비밀값을 만들 필요가
+  없고, 비밀번호를 바꾸면 옛 링크가 자동으로 죽습니다.</p>
+</div>
+
 <h2><span class="n">4</span>시스템 구조</h2>
 
 <h3>4.1 전체 그림</h3>
@@ -609,7 +649,27 @@
   <tr><td><code>DATABASE_URL_UNPOOLED</code></td>
       <td>마이그레이션 전용 <strong>직접</strong> 연결. <code>prisma migrate</code>는
           세션 단위 연결이 필요해 풀러로는 동작하지 않음</td></tr>
+  <tr><td><code>CRON_SECRET</code></td>
+      <td>Vercel 크론이 <code>/api/cron/nudge</code>를 부를 때 붙이는 인증값.
+          없으면 엔드포인트가 503으로 스스로를 막음</td></tr>
+  <tr><td><code>RESEND_API_KEY</code></td>
+      <td>메일 발송 키. 없으면 "미설정"이라 보고하고 보내지 않음</td></tr>
+  <tr><td><code>MAIL_FROM</code></td>
+      <td>보내는 사람. 도메인이 없으면 비워둠(Resend 공용 주소 사용)</td></tr>
+  <tr><td><code>NUDGE_AFTER_DAYS</code></td>
+      <td>며칠 조용하면 보낼지. 기본 3. 다음 발송까지의 간격도 같은 값</td></tr>
+  <tr><td><code>APP_URL</code></td>
+      <td>메일 속 링크가 가리킬 주소. Vercel에서는 자동 판별하므로 보통 비워둠</td></tr>
 </table>
+
+<div class="box trap">
+  <span class="t">로컬 <code>.env</code>는 dev 브랜치만 봅니다</span>
+  <p><code>DATABASE_URL</code>과 <code>DATABASE_URL_UNPOOLED</code>에는
+  <strong>Neon dev 브랜치</strong> 주소만 넣으십시오. 운영 주소는
+  <code>PROD_</code> 접두사를 붙여 따로 보관합니다. Prisma가 읽는 이름은 저 둘뿐이라,
+  이름이 다르면 어떤 prisma 명령도 — 실수로 shadow database에 지정하더라도 —
+  운영에 닿을 수 없습니다. 8.2의 사고가 이 분리를 만들었습니다.</p>
+</div>
 
 <div class="box trap">
   <span class="t">Vercel 환경변수는 빌드 시점에 고정됩니다</span>
@@ -637,6 +697,18 @@
   <li><code>npx prisma generate</code>로 타입을 갱신하고 커밋합니다.</li>
 </ol>
 
+<div class="box trap">
+  <span class="t"><code>--shadow-database-url</code>에 실제 DB 주소를 넣지 마십시오</span>
+  <p>위 2단계가 <code>--from-url</code>을 쓰는 데에는 이유가 있습니다. 그것은
+  데이터베이스를 <strong>읽기만</strong> 합니다. 반면
+  <code>--from-migrations</code>는 마이그레이션을 재생할 shadow 데이터베이스를
+  요구하고, <strong>Prisma는 shadow 데이터베이스를 초기화합니다.</strong>
+  거기에 운영 주소를 넣으면 테이블이 전부 지워집니다.</p>
+  <p>2026-08-20에 정확히 그 일이 일어났습니다(8.2). 이 절차서에는 그때도
+  <code>--from-url</code>이라고 적혀 있었습니다. <strong>문서가 틀린 것이 아니라
+  지키지 않은 것입니다.</strong></p>
+</div>
+
 <p>기존 행이 있는 테이블에 <strong>필수 컬럼</strong>을 추가할 때는 곧바로
 <code>NOT NULL</code>로 만들 수 없습니다. ① nullable로 추가 → ② 기존 행 채우기 →
 ③ <code>NOT NULL</code>로 조이기, 세 단계로 나누십시오.</p>
@@ -661,14 +733,25 @@
 <table>
   <tr><th style="width:24%">항목</th><th style="width:12%">심각도</th><th>내용과 영향</th></tr>
   <tr>
-    <td>개발용 DB 미분리</td><td><span class="tag risk">높음</span></td>
-    <td>로컬 개발 서버가 <strong>운영 데이터베이스를 그대로</strong> 봅니다.
-        실제로 이 때문에 데이터 1건이 삭제되는 사고가 있었습니다(8장).
-        Neon 브랜치를 하나 만들어 로컬 <code>.env</code>가 그쪽을 보게 하는 것이
-        가장 시급한 조치입니다. 같은 이유로, 테이블 전체를 비우고 시작하던
-        <code>db:seed</code> 스크립트는 제거했습니다(<code>123d753</code>).
-        개발용 DB가 생기면 <strong>특정 사용자에게 붙는 형태로</strong> 다시
-        만드십시오.</td>
+    <td>이력 보관이 6시간뿐</td><td><span class="tag risk">중간</span></td>
+    <td>Neon 무료 플랜의 시점 복원 가능 구간이 <strong>6시간</strong>입니다.
+        8.2의 사고는 15분 만에 발견해 되살렸지만, 같은 실수를 밤에 저질렀다면
+        아침에는 복구가 불가능했습니다. 데이터가 쌓일수록 유료 플랜이나 정기
+        덤프를 검토해야 합니다.</td>
+  </tr>
+  <tr>
+    <td>운영 주소가 로컬 <code>.env</code>에 남아 있음</td><td>낮음</td>
+    <td>2026-08-20에 Neon <code>dev</code> 브랜치를 분리해 로컬은 그쪽만 봅니다.
+        운영 주소는 같은 파일에 <code>PROD_</code> 접두사로 남아 있는데, Prisma가
+        읽지 않는 이름이라 닿지 않습니다. <strong>이 이름을
+        <code>DATABASE_URL</code>로 되돌리지 마십시오.</strong> 되돌리는 순간
+        8.1과 8.2가 다시 가능해집니다.</td>
+  </tr>
+  <tr>
+    <td>촉진 메일이 아직 꺼져 있음</td><td>낮음</td>
+    <td><code>RESEND_API_KEY</code>와 <code>CRON_SECRET</code>을 넣기 전까지
+        크론은 돌지만 아무것도 보내지 않습니다. 기능이 조용히 안 되는 것이 아니라
+        <strong>일부러 그렇게 만든 것</strong>이며, 크론 응답이 이유를 말해 줍니다.</td>
   </tr>
   <tr>
     <td>삭제 되돌리기 없음</td><td><span class="tag risk">높음</span></td>
@@ -740,10 +823,13 @@
   </tr>
 </table>
 
-<h2><span class="n">8</span>사고 기록: 데이터 1건 손실</h2>
+<h2><span class="n">8</span>사고 기록</h2>
 
-<p class="lead">같은 일이 반복되지 않도록 남깁니다. 인수인계 문서에서 사고 기록은
+<p class="lead">두 건 모두 <strong>같은 뿌리</strong>에서 나왔습니다. 개발 작업이
+운영 데이터베이스를 직접 보고 있었다는 것입니다. 인수인계 문서에서 사고 기록은
 기능 설명보다 오래 쓸모가 있습니다.</p>
+
+<h3>8.1 할 일 1건 손실 (2026-08-18)</h3>
 
 <table>
   <tr><th style="width:16%">발생</th><td>2026-08-18, UI 모션 작업 검증 중</td></tr>
@@ -755,9 +841,7 @@
       해당 위치만 0.52초였던 점으로 누락 지점을 특정</td></tr>
 </table>
 
-<h3>왜 막지 못했나</h3>
-
-<p>같은 세션에서 <strong>이미 한 번 경고 신호가 있었습니다.</strong> 검증 중 생성된
+<p><strong>왜 막지 못했나.</strong> 같은 세션에서 <strong>이미 한 번 경고 신호가 있었습니다.</strong> 검증 중 생성된
 완료 기록 2건이 운영 DB에 들어간 것을 발견하고 삭제했지만, 그때 <em>증상만
 치우고 원인(테스트가 운영 DB를 본다)은 고치지 않았습니다.</em> 그 결과 다음 검증에서
 더 큰 손실이 발생했습니다.</p>
@@ -773,9 +857,47 @@
   </ul>
 </div>
 
-<p>현재는 로그인 기능 자체가 완충 역할을 합니다. 테스트 계정으로 로그인하면
-화면에 테스트 데이터만 보이고 실제 데이터는 소유자가 없어 조회조차 되지 않습니다.
-다만 이는 <strong>부수 효과일 뿐 근본 해결이 아니며</strong>, 개발용 DB 분리가 여전히 필요합니다.</p>
+<h3>8.2 데이터베이스 전체 초기화 (2026-08-20)</h3>
+
+<table>
+  <tr><th style="width:16%">발생</th><td>2026-08-20 약 19:00 KST, 촉진 메일 기능의
+      마이그레이션 SQL을 미리 보려던 중</td></tr>
+  <tr><th>증상</th><td>계정 1개, 할 일 8건, 세션이 <strong>전부</strong> 사라짐.
+      테이블 구조와 <code>_prisma_migrations</code> 이력까지 함께 초기화됨</td></tr>
+  <tr><th>원인</th><td><code>prisma migrate diff --from-migrations …
+      --shadow-database-url "&lt;운영 주소&gt;"</code>.
+      <code>--from-migrations</code>는 마이그레이션을 재생할 shadow 데이터베이스를
+      요구하고, <strong>Prisma는 shadow 데이터베이스를 초기화합니다.</strong></td></tr>
+  <tr><th>발견</th><td>약 15분 뒤. 이어서 실행한 <code>migrate deploy</code>가
+      <code>P3005</code>로 실패해 원인을 캐다가 확인</td></tr>
+  <tr><th>복구</th><td>Neon 시점 복원으로 <code>2026-08-20T09:50:00Z</code> 상태로
+      되돌림. 0.39초 소요, 전량 복구</td></tr>
+</table>
+
+<p><strong>왜 막지 못했나.</strong> 이 문서 6.3에는 그때도
+<code>--from-url</code>을 쓰라고 적혀 있었습니다. <strong>절차서가 틀린 것이 아니라
+지키지 않은 것입니다.</strong> 더 나쁜 것은, 같은 세션에서 불과 몇 분 전에 운영
+DB를 통째로 지우는 <code>db:seed</code> 스크립트를 "위험하다"며 삭제했고 개발용
+DB 분리를 세 번 권고했다는 점입니다. <strong>권고와 행동이 어긋났습니다.</strong>
+8.1의 근본 원인을 그대로 둔 채 다른 작업을 계속한 결과이기도 합니다.</p>
+
+<div class="box trap">
+  <span class="t">이 사고에서 가져갈 원칙</span>
+  <ul>
+    <li><code>--shadow-database-url</code>에 <strong>실제 데이터베이스 주소를 절대
+        넣지 말 것.</strong> shadow 데이터베이스는 초기화됩니다.</li>
+    <li>스키마 비교는 읽기 전용인 <code>--from-url</code>만 쓸 것(6.3).</li>
+    <li>위험한 이름은 <strong>손이 닿지 않는 곳에 둘 것.</strong> 운영 주소를
+        <code>PROD_</code> 접두사로 옮긴 것이 이 사고의 실제 대책입니다. 규율이
+        아니라 구조로 막아야 합니다.</li>
+    <li>복구 창이 6시간뿐이라는 것을 기억할 것. 발견이 늦으면 절차를 알아도
+        소용이 없습니다.</li>
+  </ul>
+</div>
+
+<p>같은 날 Neon <code>dev</code> 브랜치를 분리해 로컬이 운영을 볼 수 없게 했습니다.
+8.1의 기록이 "개발용 DB 분리가 여전히 필요합니다"로 끝났었는데, <strong>그 문장을
+이틀간 방치한 대가가 8.2였습니다.</strong></p>
 
 <h2><span class="n">9</span>다음에 할 일</h2>
 

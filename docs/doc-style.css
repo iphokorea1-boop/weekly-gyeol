@@ -123,7 +123,10 @@ pre .hl { color: #ffd08a; font-weight: 700; }
 .box.tip .t { color: var(--floating-ink); }
 
 /* ---------- tables ---------- */
-table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 9.4pt; break-inside: avoid; }
+/* Tables may split across pages; only their rows may not. Forbidding the
+   whole table from breaking looks tidy until one grows past a page, at
+   which point it has nowhere to go and gets clipped. */
+table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 9.4pt; }
 th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--rule); vertical-align: top; }
 th { background: var(--sunk); font-size: 8.9pt; letter-spacing: .02em; }
 td code { font-size: .88em; }
