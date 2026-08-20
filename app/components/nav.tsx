@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays, CalendarRange, LayoutGrid, LogOut, Sun } from "lucide-react";
+import { CalendarDays, CalendarRange, Keyboard, LayoutGrid, LogOut, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
+import { useShortcutHelp } from "@/app/components/shortcuts";
 import type { CurrentUser } from "@/lib/dal";
 
 const TABS = [
@@ -17,6 +18,9 @@ const TABS = [
 
 export default function Nav({ user }: { user: CurrentUser | null }) {
   const pathname = usePathname();
+  // A shortcut nobody can discover is a shortcut nobody uses, and "?" is only
+  // obvious once you already know to press it.
+  const help = useShortcutHelp();
   const listRef = useRef<HTMLDivElement>(null);
   // null until measured; the active tab keeps its own background until then,
   // so the server-rendered nav already looks right and the handover is invisible.
@@ -111,6 +115,18 @@ export default function Nav({ user }: { user: CurrentUser | null }) {
               })}
             </div>
           </nav>
+
+          {help && (
+            <button
+              type="button"
+              onClick={help.openHelp}
+              title="키보드 단축키 (?)"
+              aria-label="키보드 단축키"
+              className="pressable press-deep lift hidden h-9 w-9 place-items-center rounded-full border border-border bg-surface text-ink-soft hover:text-foreground sm:grid"
+            >
+              <Keyboard className="h-3.5 w-3.5" strokeWidth={2.5} />
+            </button>
+          )}
 
           <form action={logout}>
             <button

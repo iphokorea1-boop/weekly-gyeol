@@ -38,7 +38,6 @@ import { tapFeedback } from "@/app/components/use-task-actions";
 import {
   dayCaption,
   opensQuickAdd,
-  QuickAddProvider,
   useQuickAdd,
 } from "@/app/components/quick-add";
 
@@ -125,9 +124,7 @@ export default function WeekBoard(props: BoardProps) {
 
   return (
     <DragProvider onDrop={handleDrop}>
-      <QuickAddProvider>
-        <Board {...props} tasks={tasks} />
-      </QuickAddProvider>
+      <Board {...props} tasks={tasks} />
     </DragProvider>
   );
 }

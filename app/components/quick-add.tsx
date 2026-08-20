@@ -39,6 +39,8 @@ type Session = { draft: TaskDraft; caption: string; anchor: Anchor };
 
 type QuickAddValue = {
   open: (draft: TaskDraft, caption: string, anchor: Anchor) => void;
+  /** Read by the shortcut handler: while the form is up, keys belong to it. */
+  isOpen: boolean;
 };
 
 const QuickAddContext = createContext<QuickAddValue | null>(null);
@@ -151,7 +153,7 @@ export function QuickAddProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => setSession(null), []);
 
   return (
-    <QuickAddContext.Provider value={{ open }}>
+    <QuickAddContext.Provider value={{ open, isOpen: session !== null }}>
       {children}
       {/* No SSR guard needed: the session stays null until a click, which only
           ever happens in the browser. */}

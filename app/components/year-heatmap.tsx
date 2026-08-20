@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { weekdayLabel } from "@/lib/task-utils";
-import {
-  dayCaption,
-  QuickAddProvider,
-  useQuickAdd,
-} from "@/app/components/quick-add";
+import { dayCaption, useQuickAdd } from "@/app/components/quick-add";
 
 export type HeatDay = {
   /** `YYYY-MM-DD`. */
@@ -127,7 +123,7 @@ function Months({ months }: { months: HeatMonth[] }) {
  */
 export default function YearHeatmap({ months }: { months: HeatMonth[] }) {
   return (
-    <QuickAddProvider>
+    <>
       <Months months={months} />
 
       <footer className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-ink-faint">
@@ -147,6 +143,6 @@ export default function YearHeatmap({ months }: { months: HeatMonth[] }) {
         />
         <span>예정 · 일정 없음</span>
       </footer>
-    </QuickAddProvider>
+    </>
   );
 }

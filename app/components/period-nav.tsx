@@ -4,7 +4,15 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const arrowClass =
   "pressable press-deep lift grid h-8 w-8 place-items-center rounded-lg border border-border bg-surface text-ink-soft hover:border-border-strong hover:text-foreground";
 
-// Shared prev / "back to now" / next control used by the week, month and year views.
+/**
+ * Shared prev / "back to now" / next control used by the week, month and year
+ * views.
+ *
+ * The `data-period` attributes are what the ← and → shortcuts click. Routing
+ * the keys through these links rather than recomputing a date keeps "what does
+ * previous mean" the property of the page that knows which period it shows,
+ * and any future view gets the arrows by rendering this component.
+ */
 export default function PeriodNav({
   prevHref,
   nextHref,
@@ -22,7 +30,12 @@ export default function PeriodNav({
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      <Link href={prevHref} aria-label={prevLabel} className={arrowClass}>
+      <Link
+        href={prevHref}
+        data-period="prev"
+        aria-label={prevLabel}
+        className={arrowClass}
+      >
         <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
       </Link>
       <Link
@@ -31,7 +44,12 @@ export default function PeriodNav({
       >
         {currentLabel}
       </Link>
-      <Link href={nextHref} aria-label={nextLabel} className={arrowClass}>
+      <Link
+        href={nextHref}
+        data-period="next"
+        aria-label={nextLabel}
+        className={arrowClass}
+      >
         <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
       </Link>
     </div>

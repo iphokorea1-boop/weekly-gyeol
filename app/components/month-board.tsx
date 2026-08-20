@@ -23,7 +23,6 @@ import { tapFeedback } from "@/app/components/use-task-actions";
 import {
   dayCaption,
   opensQuickAdd,
-  QuickAddProvider,
   useQuickAdd,
 } from "@/app/components/quick-add";
 
@@ -78,9 +77,7 @@ export default function MonthBoard(props: MonthBoardProps) {
 
   return (
     <DragProvider onDrop={handleDrop}>
-      <QuickAddProvider>
-        <Grid {...props} tasks={tasks} />
-      </QuickAddProvider>
+      <Grid {...props} tasks={tasks} />
     </DragProvider>
   );
 }
