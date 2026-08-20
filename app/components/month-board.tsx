@@ -20,6 +20,12 @@ import {
   type TaskMove,
 } from "@/app/components/board-task";
 import { tapFeedback } from "@/app/components/use-task-actions";
+import {
+  dayCaption,
+  opensQuickAdd,
+  QuickAddProvider,
+  useQuickAdd,
+} from "@/app/components/quick-add";
 
 const MAX_CHIPS_PER_DAY = 3;
 
@@ -72,7 +78,9 @@ export default function MonthBoard(props: MonthBoardProps) {
 
   return (
     <DragProvider onDrop={handleDrop}>
-      <Grid {...props} tasks={tasks} />
+      <QuickAddProvider>
+        <Grid {...props} tasks={tasks} />
+      </QuickAddProvider>
     </DragProvider>
   );
 }
@@ -85,9 +93,28 @@ function Grid({
   holidays,
 }: MonthBoardProps) {
   const { item: held, target, begin } = useDrag();
+  const { open: openQuickAdd } = useQuickAdd();
   const weeks = Array.from({ length: gridDates.length / 7 }, (_, i) =>
     gridDates.slice(i * 7, i * 7 + 7)
   );
+
+  function addOnDay(event: React.MouseEvent<HTMLDivElement>, dateISO: string) {
+    if (!opensQuickAdd(event.target)) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    openQuickAdd(
+      {
+        kind: "dated",
+        dueDate: dateISO,
+        // The month grid cannot express a time of day, so it does not guess at
+        // one. The task lands in the 종일 row until it is dragged into an hour.
+        startTime: "",
+        endTime: "",
+        weekdays: [],
+      },
+      dayCaption(dateISO),
+      { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+    );
+  }
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
@@ -127,17 +154,13 @@ function Grid({
               ).length;
 
               return (
-                <Link
+                <div
                   key={dateISO}
-                  href={`/week?week=${dateISO}`}
-                  // An <a> is natively draggable, so without this the browser
-                  // starts dragging the link itself the moment a chip inside it
-                  // moves, and its drag image fights the one we render.
-                  draggable={false}
                   data-drop="month"
                   data-date={dateISO}
+                  onClick={(event) => addOnDay(event, dateISO)}
                   className={cn(
-                    "pressable press-soft flex min-h-[104px] min-w-0 flex-col gap-1 border-r border-border p-1.5 last:border-r-0 hover:bg-surface-sunk",
+                    "pressable press-soft flex min-h-[104px] min-w-0 cursor-pointer flex-col gap-1 border-r border-border p-1.5 last:border-r-0 hover:bg-surface-sunk",
                     "transition-colors duration-150",
                     inMonth ? "" : "opacity-45",
                     isToday
@@ -148,9 +171,16 @@ function Grid({
                     over && "bg-dated-soft ring-1 ring-dated ring-inset"
                   )}
                 >
-                  <span
+                  {/* The cell adds; the number navigates. Keeping the week view
+                      one click away costs a 20px target and is the same split
+                      every calendar uses. An <a> is natively draggable, hence
+                      the flag — a dragged date number would leave a ghost. */}
+                  <Link
+                    href={`/week?week=${dateISO}`}
+                    draggable={false}
+                    title={`${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일이 있는 주 보기`}
                     className={cn(
-                      "grid h-5 w-5 place-items-center rounded-full text-xs font-bold tabular-nums",
+                      "pressable grid h-5 w-5 place-items-center rounded-full text-xs font-bold tabular-nums hover:ring-1 hover:ring-dated",
                       isToday
                         ? "bg-dated text-white"
                         : isHoliday
@@ -159,7 +189,7 @@ function Grid({
                     )}
                   >
                     {date.getUTCDate()}
-                  </span>
+                  </Link>
 
                   <div className="flex flex-col gap-1">
                     {/* Holidays sit above the day's own tasks: they're the
@@ -178,6 +208,7 @@ function Grid({
                       return (
                         <span
                           key={t.id}
+                          data-nq
                           onPointerDown={(event) =>
                             begin(
                               {
@@ -228,7 +259,7 @@ function Grid({
                       />
                     </div>
                   )}
-                </Link>
+                </div>
               );
             })}
           </div>

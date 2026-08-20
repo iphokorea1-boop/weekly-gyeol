@@ -98,8 +98,9 @@ export default async function WeekPage({ searchParams }: PageProps) {
       <KindLegend />
 
       <p className="text-center text-[11px] text-ink-faint">
-        블록을 끌어 다른 날·시간으로 옮길 수 있어요 · 미배치함 항목은 손잡이를
-        잡고 끌면 됩니다 · 정기 루틴은 같은 요일 안에서 시간만 옮겨집니다
+        빈 칸을 누르면 그 시각에 바로 추가돼요 · 블록을 끌어 다른 날·시간으로
+        옮길 수 있어요 · 미배치함 항목은 손잡이를 잡고 끌면 됩니다 · 정기 루틴은
+        같은 요일 안에서 시간만 옮겨집니다
       </p>
     </div>
   );

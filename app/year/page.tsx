@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/dal";
 import {
@@ -11,27 +10,16 @@ import {
   mondayIndex,
   parseYearParam,
   todayInSeoul,
-  weekdayLabel,
 } from "@/lib/task-utils";
 import { holidayLabel, holidayMap } from "@/lib/holidays";
 import { computeAchievements, computeStreaks } from "@/lib/gamification";
 import PeriodNav from "@/app/components/period-nav";
 import AchievementGrid from "@/app/components/achievement-grid";
+import YearHeatmap, { type HeatMonth } from "@/app/components/year-heatmap";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = { searchParams: Promise<{ year?: string }> };
-
-// The heatmap reads as "how much of what I planned did I actually do", so it
-// ramps toward the completion green. Floating chips never appear here (they
-// have no date), so the colour carries no other meaning in this view.
-// Days that haven't happened yet stay blank — routines recur into every future
-// day, and tinting them as 0% would make the future look like failure.
-function heatBackground(total: number, done: number): string {
-  if (total === 0) return "var(--surface-sunk)";
-  const pct = Math.round(18 + (done / total) * 82);
-  return `color-mix(in srgb, var(--floating) ${pct}%, var(--surface-sunk))`;
-}
 
 export default async function YearPage({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -54,24 +42,35 @@ export default async function YearPage({ searchParams }: PageProps) {
   // colouring 19 squares red would compete with the scale that carries meaning.
   const holidays = holidayMap(makeDate(year, 0, 1), makeDate(year, 11, 31));
 
-  const months = Array.from({ length: 12 }, (_, m) => {
+  // Serialised here rather than in the component: the grid is a client
+  // component so each square can open the add form, and Date objects would be
+  // re-read in the browser's own timezone on the way across.
+  const months: HeatMonth[] = Array.from({ length: 12 }, (_, m) => {
     const monthStart = makeDate(year, m, 1);
     const days = Array.from(
       { length: getMonthEnd(monthStart).getUTCDate() },
       (_, i) => {
         const date = makeDate(year, m, i + 1);
+        // Routines recur into every future day, so tinting those as 0% would
+        // make the rest of the year look like failure.
         const future = date > today;
         const { items, done } = daySummary(tasks, date);
         return {
-          date,
+          dateISO: formatDateISO(date),
           total: future ? 0 : items.length,
           done: future ? 0 : done,
           future,
+          isToday: isSameDay(date, today),
           holiday: holidayLabel(holidays.get(formatDateISO(date)) ?? []),
         };
       }
     );
-    return { monthStart, days, lead: mondayIndex(monthStart) };
+    return {
+      monthISO: formatMonthISO(monthStart),
+      label: `${m + 1}월`,
+      lead: mondayIndex(monthStart),
+      days,
+    };
   });
 
   const yearTotals = months
@@ -119,75 +118,7 @@ export default async function YearPage({ searchParams }: PageProps) {
         />
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {months.map(({ monthStart, days, lead }) => (
-          <section
-            key={monthStart.toISOString()}
-            className="rounded-xl border border-border bg-surface p-3 shadow-sm"
-          >
-            <Link
-              href={`/month?month=${formatMonthISO(monthStart)}`}
-              className="pressable text-sm font-bold hover:text-dated-ink"
-            >
-              {monthStart.getUTCMonth() + 1}월
-            </Link>
-
-            <div className="mt-2 grid max-w-[168px] grid-cols-7 gap-1">
-              {Array.from({ length: 7 }, (_, i) => (
-                <span
-                  key={i}
-                  className="text-center text-[9px] font-semibold text-ink-faint"
-                >
-                  {weekdayLabel((i + 1) % 7)}
-                </span>
-              ))}
-
-              {Array.from({ length: lead }, (_, i) => (
-                <span key={`lead-${i}`} />
-              ))}
-
-              {days.map(({ date, total, done, future, holiday }) => (
-                <span
-                  key={date.toISOString()}
-                  title={`${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일${
-                    holiday ? ` · ${holiday}` : ""
-                  } · ${
-                    future
-                      ? "예정"
-                      : total === 0
-                        ? "일정 없음"
-                        : `${done}/${total} 완료`
-                  }`}
-                  style={{ background: heatBackground(total, done) }}
-                  className={`aspect-square rounded-[3px] ${
-                    isSameDay(date, today)
-                      ? "ring-2 ring-dated ring-offset-1 ring-offset-[var(--surface)]"
-                      : ""
-                  }`}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-
-      <footer className="flex flex-wrap items-center justify-center gap-2 text-[11px] text-ink-faint">
-        <span>적게 완료</span>
-        {[0, 0.34, 0.67, 1].map((r) => (
-          <span
-            key={r}
-            style={{ background: heatBackground(1, r) }}
-            className="h-3 w-3 rounded-[3px]"
-          />
-        ))}
-        <span>많이 완료</span>
-        <span className="mx-1 opacity-50">·</span>
-        <span
-          style={{ background: heatBackground(0, 0) }}
-          className="h-3 w-3 rounded-[3px]"
-        />
-        <span>예정 · 일정 없음</span>
-      </footer>
+      <YearHeatmap months={months} />
 
       <AchievementGrid achievements={achievements} />
     </div>

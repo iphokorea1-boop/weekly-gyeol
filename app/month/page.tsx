@@ -104,8 +104,9 @@ export default async function MonthPage({ searchParams }: PageProps) {
 
       <footer className="flex flex-col items-center gap-1 text-center text-[11px] text-ink-faint">
         <span>
-          칩을 끌어 다른 날짜로 옮길 수 있어요 · 날짜를 누르면 그 주의 시간표로
-          이동합니다 · 칸 아래 막대 = 그날 루틴 완료율
+          칸을 누르면 그 날짜로 바로 추가돼요 · 날짜 숫자를 누르면 그 주의
+          시간표로 이동합니다 · 칩을 끌어 다른 날짜로 옮길 수 있어요 · 칸 아래
+          막대 = 그날 루틴 완료율
         </span>
         {/* Saying nothing here would quietly turn a missing 추석 into "there is
             no 추석 that year". */}

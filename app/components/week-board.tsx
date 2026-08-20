@@ -35,9 +35,23 @@ import {
   type TaskMove,
 } from "@/app/components/board-task";
 import { tapFeedback } from "@/app/components/use-task-actions";
+import {
+  dayCaption,
+  opensQuickAdd,
+  QuickAddProvider,
+  useQuickAdd,
+} from "@/app/components/quick-add";
 
 const PX_PER_MINUTE = 50 / 60;
 const GRID_HEIGHT = (GRID_END_HOUR - GRID_START_HOUR) * 60 * PX_PER_MINUTE; // 900
+
+/**
+ * Clicking to create rounds down to the half hour, not to the quarter the drag
+ * snaps to. The grid draws a line every hour, so a click can only really claim
+ * to mean "this hour" or "the second half of it" — offering 15-minute precision
+ * from a gesture that cannot express it would just produce times nobody chose.
+ */
+const CREATE_SLOT_MINUTES = 30;
 
 const HOUR_MARKS = Array.from(
   { length: (GRID_END_HOUR - GRID_START_HOUR) / 2 + 1 },
@@ -111,14 +125,67 @@ export default function WeekBoard(props: BoardProps) {
 
   return (
     <DragProvider onDrop={handleDrop}>
-      <Board {...props} tasks={tasks} />
+      <QuickAddProvider>
+        <Board {...props} tasks={tasks} />
+      </QuickAddProvider>
     </DragProvider>
   );
 }
 
 function Board({ weekDates, todayISO, tasks, holidays, thumb }: BoardProps) {
   const { item: held, target, begin } = useDrag();
+  const { open: openQuickAdd } = useQuickAdd();
   const weekDateObjects = weekDates.map(parseDateISO);
+
+  /** Empty space in a day column: add a task starting at the hour clicked. */
+  function addAtTime(
+    event: React.MouseEvent<HTMLDivElement>,
+    dateISO: string
+  ) {
+    if (!opensQuickAdd(event.target)) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const slot =
+      Math.floor(
+        (event.clientY - rect.top) / PX_PER_MINUTE / CREATE_SLOT_MINUTES
+      ) * CREATE_SLOT_MINUTES;
+    const offset = Math.min(
+      Math.max(slot, 0),
+      GRID_RANGE_MINUTES - DEFAULT_DURATION_MINUTES
+    );
+    const start = GRID_START_HOUR * 60 + offset;
+    const startTime = minutesToTime(start);
+
+    openQuickAdd(
+      {
+        kind: "dated",
+        dueDate: dateISO,
+        startTime,
+        endTime: minutesToTime(start + DEFAULT_DURATION_MINUTES),
+        weekdays: [],
+      },
+      dayCaption(dateISO, startTime),
+      // Anchored at the pointer's height rather than the column's, which is
+      // 900px tall and would put the popover far below the hour clicked.
+      { left: rect.left, top: event.clientY, width: rect.width, height: 0 }
+    );
+  }
+
+  /** The 종일 row: same day, no time. */
+  function addAllDay(event: React.MouseEvent<HTMLDivElement>, dateISO: string) {
+    if (!opensQuickAdd(event.target)) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    openQuickAdd(
+      {
+        kind: "dated",
+        dueDate: dateISO,
+        startTime: "",
+        endTime: "",
+        weekdays: [],
+      },
+      dayCaption(dateISO),
+      { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+    );
+  }
 
   const days = weekDates.map((dateISO) => {
     const date = parseDateISO(dateISO);
@@ -301,12 +368,13 @@ function Board({ weekDates, todayISO, tasks, holidays, thumb }: BoardProps) {
                   key={dateISO}
                   data-drop="allday"
                   data-date={dateISO}
+                  onClick={(event) => addAllDay(event, dateISO)}
                   // min-w-0: grid items default to min-width:auto, so a long
                   // chip widens its own 1fr column and shoves the row out of
                   // step with the header — making a task look like it sits on
                   // the neighbouring day.
                   className={cn(
-                    "flex min-h-[34px] min-w-0 flex-col gap-1 border-r border-border p-1.5 last:border-r-0",
+                    "flex min-h-[34px] min-w-0 cursor-pointer flex-col gap-1 border-r border-border p-1.5 last:border-r-0",
                     "transition-colors duration-150",
                     over && "bg-dated-soft ring-1 ring-dated ring-inset"
                   )}
@@ -325,6 +393,7 @@ function Board({ weekDates, todayISO, tasks, holidays, thumb }: BoardProps) {
                   {allDayDated.map((t) => (
                     <span
                       key={t.id}
+                      data-nq
                       onPointerDown={(event) =>
                         begin(
                           {
@@ -390,8 +459,9 @@ function Board({ weekDates, todayISO, tasks, holidays, thumb }: BoardProps) {
                   // element it actually describes.
                   data-px-per-minute={PX_PER_MINUTE}
                   data-range-minutes={GRID_RANGE_MINUTES}
+                  onClick={(event) => addAtTime(event, dateISO)}
                   className={cn(
-                    "relative border-r border-border last:border-r-0",
+                    "relative cursor-pointer border-r border-border last:border-r-0",
                     isToday && "bg-dated-soft/30"
                   )}
                   style={{
