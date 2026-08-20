@@ -133,11 +133,13 @@ npx prisma generate</code></pre></li>
   <tr><td>애니메이션·누름 효과 조절</td><td><code>app/globals.css</code>의 <code>.pressable</code>, <code>.lift</code></td></tr>
   <tr><td>할 일 목록에 보이는 항목 모양</td><td><code>app/components/task-item.tsx</code></td></tr>
   <tr><td>주간 격자 안의 일정 블록</td><td><code>app/components/task-block.tsx</code></td></tr>
-  <tr><td>할 일 추가 폼</td><td><code>app/components/add-task-form.tsx</code></td></tr>
+  <tr><td>"할 일 추가" 버튼 (오늘 페이지)</td><td><code>app/components/add-task-form.tsx</code></td></tr>
   <tr><td>연속 기록·XP·배지 규칙</td><td><code>lib/gamification.ts</code></td></tr>
   <tr><td>날짜 계산</td><td><code>lib/task-utils.ts</code></td></tr>
   <tr><td>공휴일 추가·수정 (2031년 이후 등)</td><td><code>lib/holidays.ts</code>의 <code>LUNAR</code> 표</td></tr>
   <tr><td>드래그로 옮기는 동작</td><td><code>app/components/drag-context.tsx</code>(엔진), <code>week-board.tsx</code>·<code>month-board.tsx</code>(놓을 자리)</td></tr>
+  <tr><td>할 일 추가 폼의 칸·문구</td><td><code>app/components/task-form.tsx</code> (오늘 페이지와 달력이 함께 씀)</td></tr>
+  <tr><td>날짜를 눌러 추가하는 동작</td><td><code>app/components/quick-add.tsx</code>(팝오버), 각 보드의 <code>addAtTime</code>·<code>addOnDay</code></td></tr>
   <tr><td>촉진 메일 문구·발송 조건</td><td><code>lib/nudge.ts</code></td></tr>
   <tr><td>메일이 언제 나가는지</td><td><code>vercel.json</code>의 <code>crons</code>, <code>app/api/cron/nudge/route.ts</code></td></tr>
   <tr><td>데이터베이스에 컬럼 추가</td><td><code>prisma/schema.prisma</code> (5.4 참고)</td></tr>
@@ -475,9 +477,10 @@ npx prisma generate</code></pre></li>
   data: { title: title.trim(), <span class="hl">place: place || <span class="k">null</span></span>, ..., userId: user.id },
 });</code></pre></li>
 
-  <li><strong>입력칸 만들기</strong> — <code>app/components/add-task-form.tsx</code>에
+  <li><strong>입력칸 만들기</strong> — <code>app/components/task-form.tsx</code>에
       <code>useState</code>와 <code>&lt;input&gt;</code>을 추가하고, <code>submit</code>의
-      <code>body</code>에 <code>place</code>를 넣습니다.</li>
+      <code>body</code>에 <code>place</code>를 넣습니다. 이 파일 하나만 고치면 오늘
+      페이지와 달력 팝오버에 <strong>동시에</strong> 나타납니다.</li>
 
   <li><strong>화면에 보여주기</strong> — <code>app/components/task-item.tsx</code>의
       <code>TaskItemData</code> 타입에 <code>place?: string | null</code>을 더하고,
