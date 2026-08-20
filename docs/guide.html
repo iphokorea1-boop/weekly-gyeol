@@ -108,6 +108,7 @@ npx prisma generate</code></pre></li>
 │  ├─ gamification.ts      <span class="c"># 연속 기록·XP·배지 계산</span>
 │  ├─ holidays.ts          <span class="c"># 공휴일 계산 (DB를 쓰지 않음)</span>
 │  ├─ nudge.ts             <span class="c"># 활동 촉진 메일: 보낼지 판단 + 본문</span>
+│  ├─ shortcuts.ts         <span class="c"># 단축키 표 (키 해석 + 도움말이 함께 씀)</span>
 │  ├─ mailer.ts            <span class="c"># 메일 발송 (Resend REST API)</span>
 │  ├─ auth.ts              <span class="c"># 비밀번호와 세션</span>
 │  ├─ dal.ts               <span class="c"># "지금 로그인한 사람이 누구인가"</span>
@@ -140,6 +141,7 @@ npx prisma generate</code></pre></li>
   <tr><td>드래그로 옮기는 동작</td><td><code>app/components/drag-context.tsx</code>(엔진), <code>week-board.tsx</code>·<code>month-board.tsx</code>(놓을 자리)</td></tr>
   <tr><td>할 일 추가 폼의 칸·문구</td><td><code>app/components/task-form.tsx</code> (오늘 페이지와 달력이 함께 씀)</td></tr>
   <tr><td>날짜를 눌러 추가하는 동작</td><td><code>app/components/quick-add.tsx</code>(팝오버), 각 보드의 <code>addAtTime</code>·<code>addOnDay</code></td></tr>
+  <tr><td>단축키 추가·변경</td><td><code>lib/shortcuts.ts</code>의 <code>SHORTCUTS</code>와 <code>resolveShortcut</code> (표에 넣으면 도움말에도 자동으로 나옵니다)</td></tr>
   <tr><td>촉진 메일 문구·발송 조건</td><td><code>lib/nudge.ts</code></td></tr>
   <tr><td>메일이 언제 나가는지</td><td><code>vercel.json</code>의 <code>crons</code>, <code>app/api/cron/nudge/route.ts</code></td></tr>
   <tr><td>데이터베이스에 컬럼 추가</td><td><code>prisma/schema.prisma</code> (5.4 참고)</td></tr>

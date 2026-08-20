@@ -14,7 +14,7 @@
   <p class="sub">초안 문서 이후에 무엇이 더해지고, 무엇이 지워지고,
      무엇이 잘못됐는가. 인수인계 문서의 부록입니다.</p>
   <div class="meta">
-    <b>다루는 구간</b> &nbsp;<code>753c3d9</code> (2026-08-19) &rarr; <code>deb0b7e</code> (2026-08-20)<br>
+    <b>다루는 구간</b> &nbsp;<code>753c3d9</code> (2026-08-19) &rarr; <code>b9ceae2</code> (2026-08-20)<br>
     <b>기준 문서</b> &nbsp;주간결 인수인계 문서 (2026-08-19 판)<br>
     <b>운영 주소</b> &nbsp;weekly-gyeol.vercel.app<br>
     <b>문서 작성</b> &nbsp;2026-08-20
@@ -26,17 +26,17 @@
 <p class="lead">인수인계 문서 초안을 이미 읽으셨다면, <strong>다시 읽어야 할 부분은
 이 문서에 전부 들어 있습니다.</strong> 23쪽을 처음부터 다시 넘길 필요가 없습니다.</p>
 
-<p>초안이 나온 뒤 기능 네 가지가 붙었고, 죽은 코드가 정리됐고,
+<p>초안이 나온 뒤 기능 다섯 가지가 붙었고, 죽은 코드가 정리됐고,
 <strong>운영 데이터베이스가 한 번 통째로 지워졌습니다.</strong> 마지막 것이 이
 구간에서 가장 중요한 사건이며, 그 대응으로 개발 환경의 구조 자체가 바뀌었습니다.
-7장을 먼저 읽으셔도 좋습니다.</p>
+8장을 먼저 읽으셔도 좋습니다.</p>
 
 <div class="box tip">
   <span class="t">본 문서 두 개는 이미 갱신돼 있습니다</span>
   <p>같은 폴더의 인수인계 문서와 코드 안내서 PDF는 <code>d5d17e5</code> 기준으로 다시
   만들어졌으므로, 여기 적힌 내용이 그 안에도 반영되어 있습니다. 이 부록은
   <strong>"어디가 달라졌는지"</strong>만 뽑아 놓은 것입니다. 어느 절이 새로 생겼는지는
-  8장의 대조표에 있습니다.</p>
+  9장의 대조표에 있습니다.</p>
 </div>
 
 <h3>한 장 요약</h3>
@@ -44,7 +44,7 @@
 <table>
   <tr><th style="width:24%">항목</th><th>내용</th></tr>
   <tr><td>새 기능</td><td>공휴일 자동 표시 &middot; 드래그로 일정 옮기기 &middot; 활동 촉진 메일
-      &middot; 날짜를 눌러 바로 추가</td></tr>
+      &middot; 날짜를 눌러 바로 추가 &middot; 단축키</td></tr>
   <tr><td>정리</td><td>운영 DB를 통째로 지울 수 있던 <code>db:seed</code> 삭제,
       미사용 파일 8개 제거, <code>README.md</code> 재작성</td></tr>
   <tr><td>사고</td><td>운영 데이터베이스 전체 초기화 (2026-08-20). 시점 복원으로 전량 회수</td></tr>
@@ -54,7 +54,7 @@
       (<code>lastActiveAt</code>, <code>lastNudgeAt</code>, <code>nudgeEmails</code>)</td></tr>
   <tr><td>새 환경변수</td><td><code>CRON_SECRET</code>, <code>RESEND_API_KEY</code>,
       <code>MAIL_FROM</code>, <code>NUDGE_AFTER_DAYS</code>, <code>APP_URL</code></td></tr>
-  <tr><td>코드 변화</td><td>새 파일 14개, 삭제 8개. 약 +2,800줄 / &minus;750줄</td></tr>
+  <tr><td>코드 변화</td><td>새 파일 16개, 삭제 8개. 약 +3,200줄 / &minus;800줄</td></tr>
   <tr><td>지금 가장 값어치 있는 다음 일</td><td>삭제 되돌리기.
       <code>archived</code> 컬럼은 이미 있고 아직 쓰이지 않습니다</td></tr>
 </table>
@@ -78,18 +78,23 @@
   <tr><td><code>921635c</code></td><td>Record the drag-and-drop decisions&hellip;</td>
       <td>인수인계 문서 3.10 추가</td></tr>
   <tr><td><code>123d753</code></td><td>Remove a seed script that would have wiped the live database</td>
-      <td>중간 점검. 미사용 코드 정리와 <code>README.md</code> 재작성 (6장)</td></tr>
+      <td>중간 점검. 미사용 코드 정리와 <code>README.md</code> 재작성 (7장)</td></tr>
   <tr><td><code>40551c4</code></td><td>Note the removed seed script in the handover docs</td>
       <td>문서 반영</td></tr>
   <tr><td><code>925acef</code></td><td>Email an account that has gone quiet for a few days</td>
-      <td>활동 촉진 메일 (4장). 같은 날 개발용 DB를 분리했고, 그 계기가 6장의 사고</td></tr>
+      <td>활동 촉진 메일 (4장). 같은 날 개발용 DB를 분리했고, 그 계기가 8장의 사고</td></tr>
   <tr><td><code>44fd91f</code></td><td>Record the second data loss, and the separation that answers it</td>
       <td>인수인계 문서 8장을 8.1/8.2로 분리, 7장 위험 목록 갱신</td></tr>
   <tr><td><code>d5d17e5</code></td><td>Record that the nudge mail lands in spam without a domain</td>
       <td>스팸 분류와 재배포 함정을 위험 목록에 추가</td></tr>
   <tr><td><code>deb0b7e</code></td><td>Let a task be added by clicking the day it belongs on</td>
       <td>달력에서 할 일을 <strong>만들 방법이 없었음</strong>. 빈 칸을 누르면 그 날짜로
-          추가되게 함(5장). <strong>현재 최신</strong></td></tr>
+          추가되게 함(5장)</td></tr>
+  <tr><td><code>ae299a3</code></td><td>Record the click-to-add decisions in the handover docs</td>
+      <td>인수인계 문서 3.12 추가</td></tr>
+  <tr><td><code>b9ceae2</code></td><td>Add keyboard shortcuts for moving around the app</td>
+      <td>T &middot; W &middot; M &middot; Y로 화면 이동, 화살표로 기간 이동(6장).
+          <strong>현재 최신</strong></td></tr>
 </table>
 
 <h2><span class="n">2</span>공휴일: 저장하지 않고 계산한다</h2>
@@ -392,11 +397,75 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 
 <h3>5.4 아직 안 되는 것</h3>
 
-<p>빈 칸을 <strong>키보드로</strong> 누를 수는 없습니다. 연간 칸은 버튼이라 탭으로
+<p>빈 칸을 <strong>키보드로</strong> 짚을 수는 없습니다. 연간 칸은 버튼이라 탭으로
 닿고 월간은 날짜 숫자가 링크라 탭으로 닿지만, 주간 격자의 빈 자리에는 초점이 가지
-않습니다. 오늘 페이지의 "할 일 추가"가 여전히 완전한 키보드 경로입니다.</p>
+않습니다. 다만 <strong>키보드만으로 할 일을 만드는 길은 6장의 <code>N</code>이
+열어 두었습니다</strong> — 오늘 날짜로 폼이 열리고, 다른 날짜는 폼 안에서
+고칩니다.</p>
 
-<h2><span class="n">6</span>중간 점검: 지운 것</h2>
+<h2><span class="n">6</span>단축키</h2>
+
+<p class="lead">글자 하나로 화면을 옮깁니다. <code>?</code>를 누르면 전체 목록이
+뜨고, 오른쪽 위 키보드 버튼도 같은 것을 엽니다.</p>
+
+<table>
+  <tr><th style="width:22%">키</th><th>동작</th></tr>
+  <tr><td><code>T</code> <code>W</code> <code>M</code> <code>Y</code></td>
+      <td>오늘 &middot; 주간 &middot; 월간 &middot; 연간</td></tr>
+  <tr><td><code>Ctrl</code> + <code>M</code></td><td>월간 (M과 같습니다)</td></tr>
+  <tr><td><code>←</code> <code>→</code></td><td>이전 &middot; 다음 주 &middot; 달 &middot; 해</td></tr>
+  <tr><td><code>N</code></td><td>새 할 일 (오늘 날짜)</td></tr>
+  <tr><td><code>?</code></td><td>단축키 목록</td></tr>
+  <tr><td><code>Esc</code></td><td>열린 것 닫기</td></tr>
+</table>
+
+<h3>6.1 <code>Ctrl</code>이 M에만 붙는 이유</h3>
+
+<div class="box trap">
+  <span class="t">Ctrl+T와 Ctrl+W는 쓸 수 없습니다</span>
+  <p><code>Ctrl+T</code>는 새 탭, <code>Ctrl+W</code>는 탭 닫기입니다.
+  <strong>브라우저가 페이지보다 먼저 가져가므로</strong> 웹 페이지가 가로챌 수
+  없고, 가로채려 시도하는 것 자체가 사용자에게 해롭습니다.</p>
+  <p>하필 오늘(<strong>T</strong>oday)과 주간(<strong>W</strong>eek)의 자연스러운
+  글자가 그 둘입니다. 그래서 전체를 <strong>맨 글자</strong>로 두고, 브라우저가
+  건드리지 않는 <code>Ctrl+M</code>만 함께 받습니다.</p>
+</div>
+
+<p>이 사정은 <code>?</code> 도움말 맨 아래에 그대로 적혀 있습니다. 적어 두지 않으면
+그냥 <strong>일관성 없는 설계로 보이고</strong>, 다음에 누가 "통일한다"며
+<code>Ctrl+W</code>를 넣습니다.</p>
+
+<h3>6.2 이전·다음이 날짜를 계산하지 않는다</h3>
+
+<p><code>←</code>와 <code>→</code>는 <strong>페이지가 이미 그려 둔 이전/다음 버튼을
+누릅니다.</strong> 단축키가 직접 계산했다면 "이전"이 무엇인지 아는 곳이 두 군데가
+되고, 주간은 7일 &middot; 월간은 한 달 &middot; 연간은 한 해라는 규칙이 언젠가
+한쪽에서만 고쳐집니다. 지금은 이전/다음 버튼을 그리는 화면이면 <strong>무엇이든
+화살표가 공짜로 따라옵니다.</strong></p>
+
+<p>보고 있는 화면의 글자를 <strong>다시</strong> 누르면 이번 주 &middot; 이번 달
+&middot; 올해로 돌아오는 것도 따로 만든 규칙이 아닙니다. 단축키는 쿼리가 없는
+주소로 보내고, 쿼리가 없으면 각 화면이 원래 현재 기간을 보여줍니다.</p>
+
+<h3>6.3 입력 중에는 멈춘다</h3>
+
+<div class="box warn">
+  <span class="t">한글 조합을 특별히 다룹니다</span>
+  <p>글자 하나가 곧 명령이므로, 할 일 제목에 "<strong>월</strong>요일 정리"를 치는
+  순간 화면이 넘어가면 안 됩니다. 세 가지를 확인합니다 &mdash; 입력칸 안인지,
+  <strong>한글을 조합하는 중인지</strong>, 폼이 열려 있는지.</p>
+  <p>가운데 것을 빼면 한글 첫 자음이 명령으로 새어 나갑니다. 브라우저는 조합 중인
+  키를 <code>isComposing</code>으로 알려주고, 그것을 무시하면 "ㅁ"이 월간 이동이
+  됩니다.</p>
+</div>
+
+<h3>6.4 곁들여 바뀐 것</h3>
+
+<p><code>N</code>이 어느 화면에서든 추가 폼을 열어야 해서, 5장의 팝오버를
+<strong>앱 전체를 감싸는 자리로 올렸습니다.</strong> 주간 &middot; 월간 &middot;
+연간이 각자 하나씩 갖고 있던 것이 하나로 줄었습니다.</p>
+
+<h2><span class="n">7</span>중간 점검: 지운 것</h2>
 
 <p class="lead">쓰이지 않는 코드는 읽는 사람에게 <strong>거짓말을 합니다.</strong>
 있으니까 필요하겠거니 하고 유지하게 되기 때문입니다.</p>
@@ -407,7 +476,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
   지우고</strong> 예시 데이터를 넣도록 되어 있었습니다. 당시 로컬 <code>.env</code>는
   운영 데이터베이스를 보고 있었으므로, <strong>한 번만 눌렀으면 운영 데이터가
   전부 사라졌을 것입니다.</strong> 그날 늦게 실제로 다른 경로로 같은 일이
-  일어났습니다(7장).</p>
+  일어났습니다(8장).</p>
 </div>
 
 <table>
@@ -428,13 +497,13 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 설명서로 다시 썼습니다.</strong> 세 가지 분류, 문서 위치, 명령 목록,
 그리고 지금 조심해야 할 것들이 들어 있습니다.</p>
 
-<h2><span class="n">7</span>사고: 데이터베이스 전체 초기화</h2>
+<h2><span class="n">8</span>사고: 데이터베이스 전체 초기화</h2>
 
 <p class="lead">이 구간에서 가장 중요한 사건입니다. 초안 문서의 8장은 사고 한 건을
 다뤘지만, 지금은 <strong>두 건이고 뿌리가 같습니다</strong> &mdash; 개발 작업이 운영
 데이터베이스를 직접 보고 있었다는 것.</p>
 
-<h3>7.1 무슨 일이 있었나</h3>
+<h3>8.1 무슨 일이 있었나</h3>
 
 <table>
   <tr><th style="width:16%">발생</th><td>2026-08-20 약 19:00 KST, 촉진 메일 기능의
@@ -451,7 +520,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
       되돌림. <strong>0.39초, 전량 복구</strong></td></tr>
 </table>
 
-<h3>7.2 왜 막지 못했나</h3>
+<h3>8.2 왜 막지 못했나</h3>
 
 <p>인수인계 문서 6.3에는 <strong>그때도</strong> 읽기 전용인 <code>--from-url</code>을
 쓰라고 적혀 있었습니다. <strong>절차서가 틀린 것이 아니라 지키지 않은 것입니다.</strong></p>
@@ -461,7 +530,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 점입니다. <strong>권고와 행동이 어긋났습니다.</strong> 8월 18일 사고의 근본 원인을
 그대로 둔 채 다른 작업을 계속한 결과이기도 합니다.</p>
 
-<h3>7.3 실제 대책: 이름을 갈라놓기</h3>
+<h3>8.3 실제 대책: 이름을 갈라놓기</h3>
 
 <p>같은 날 Neon에 <code>dev</code> 브랜치를 만들어 로컬 <code>.env</code>가 그쪽만
 보게 했습니다. 운영 주소는 같은 파일에 남아 있지만 <strong><code>PROD_</code> 접두사를
@@ -494,21 +563,21 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
   </ul>
 </div>
 
-<h3>7.4 초안에서 사라진 위험 항목</h3>
+<h3>8.4 초안에서 사라진 위험 항목</h3>
 
 <p>초안 7장의 <strong>"개발용 DB 미분리 &mdash; 심각도 높음"</strong> 항목은
 해소되어 목록에서 빠졌습니다. 대신 <strong>"이력 보관이 6시간뿐"</strong>과
 <strong>"운영 주소가 로컬 <code>.env</code>에 남아 있음"</strong>이 들어갔습니다.
 위험이 사라진 것이 아니라 <strong>모양이 바뀐 것</strong>으로 읽으십시오.</p>
 
-<h2><span class="n">8</span>본 문서 어디가 바뀌었나</h2>
+<h2><span class="n">9</span>본 문서 어디가 바뀌었나</h2>
 
 <p class="lead">초안을 종이로 갖고 계시다면, 갱신본에서 <strong>이 절들만</strong>
 다시 보시면 됩니다.</p>
 
 <table>
   <tr><th style="width:14%">문서</th><th style="width:20%">위치</th><th>변경</th></tr>
-  <tr><td rowspan="11">인수인계<br>문서</td>
+  <tr><td rowspan="12">인수인계<br>문서</td>
       <td>2장</td><td>커밋 표에 5줄 추가 (12개 &rarr; 17개)</td></tr>
   <tr><td><strong>3.9 (신규)</strong></td><td>공휴일을 저장하지 않고 계산하는 이유</td></tr>
   <tr><td><strong>3.10 (신규)</strong></td><td>드래그를 포인터 이벤트로 만든 이유,
@@ -517,20 +586,24 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
       수신 거부가 POST인 이유</td></tr>
   <tr><td><strong>3.12 (신규)</strong></td><td>날짜를 눌러 추가하는 동작, 팝오버인 이유,
       월간에서 칸과 날짜 숫자가 갈라진 이유</td></tr>
-  <tr><td>4.3</td><td>파일 지도에 보드 &middot; 드래그 엔진 &middot; 추가 폼 5줄</td></tr>
+  <tr><td><strong>3.13 (신규)</strong></td><td>단축키가 브라우저와 싸우지 않는 이유,
+      이전·다음이 날짜를 계산하지 않는 이유, 한글 조합 처리</td></tr>
+  <tr><td>4.3</td><td>파일 지도에 보드 &middot; 드래그 엔진 &middot; 추가 폼 &middot;
+      단축키 7줄</td></tr>
   <tr><td>6.2</td><td>환경변수 5개 추가, <strong>dev 브랜치 함정 상자 신규</strong></td></tr>
   <tr><td>6.3</td><td><strong><code>--shadow-database-url</code> 금지 상자 신규</strong></td></tr>
   <tr><td>7장</td><td>항목 1개 삭제, <strong>8개 추가</strong> (7.4 참조)</td></tr>
-  <tr><td>7장</td><td>"달력 칸은 마우스·터치 전용" 항목 신규 (5.4)</td></tr>
+  <tr><td>7장</td><td>"특정 날짜를 키보드로 고를 수 없음" 항목 신규 (5.4 · 6장)</td></tr>
   <tr><td><strong>8장</strong></td><td>8.1 / <strong>8.2 (신규)</strong>로 분리.
       제목이 "데이터 1건 손실"에서 "사고 기록"으로</td></tr>
-  <tr><td rowspan="3">코드<br>안내서</td>
+  <tr><td rowspan="4">코드<br>안내서</td>
       <td>폴더 지도</td><td><code>holidays.ts</code> &middot; <code>nudge.ts</code> &middot;
       <code>mailer.ts</code> 3줄 추가</td></tr>
   <tr><td>"어디를 고치나" 표</td><td>공휴일 &middot; 드래그 &middot; 메일 문구 &middot;
       발송 시각 &middot; 추가 폼 &middot; 날짜 클릭 6줄 추가</td></tr>
   <tr><td>컬럼 추가 실습</td><td>입력칸을 만드는 파일이
       <code>add-task-form.tsx</code>에서 <code>task-form.tsx</code>로</td></tr>
+  <tr><td>폴더 지도 &middot; 표</td><td><code>shortcuts.ts</code> 2줄 추가</td></tr>
 </table>
 
 <p>이와 별개로 조판 문제 하나를 고쳤습니다. 표 전체가 페이지를 넘지 못하게 막고
@@ -538,9 +611,9 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 통째로 비었습니다.</strong> 이제 표는 나뉘고 <strong>행만</strong> 나뉘지 않습니다.
 인수인계 문서가 25쪽에서 23쪽으로 줄어든 것은 내용이 빠져서가 아니라 이 때문입니다.</p>
 
-<h2><span class="n">9</span>지금 상태와 다음 일</h2>
+<h2><span class="n">10</span>지금 상태와 다음 일</h2>
 
-<h3>9.1 운영에서 확인된 것</h3>
+<h3>10.1 운영에서 확인된 것</h3>
 
 <table>
   <tr><th style="width:32%">항목</th><th>상태</th></tr>
@@ -552,7 +625,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
   <tr><td>발송 주기</td><td><code>afterDays: 3</code> 반영 확인</td></tr>
 </table>
 
-<h3>9.2 다음에 할 일</h3>
+<h3>10.2 다음에 할 일</h3>
 
 <ol class="steps">
   <li><strong>삭제 되돌리기.</strong> 지금 X 버튼은 즉시 영구 삭제입니다.

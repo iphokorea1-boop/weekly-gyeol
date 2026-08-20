@@ -122,6 +122,14 @@ pre .hl { color: #ffd08a; font-weight: 700; }
 .box.tip  { border-color: var(--floating); background: var(--floating-soft); }
 .box.tip .t { color: var(--floating-ink); }
 
+/* Inline code in prose must not split mid-token: "Ctrl+M" broken across a
+   line reads as "Ctr / l+M". Table cells are left alone — a long command with
+   spaces in it does need to wrap, and there is one in the incident report. */
+p code, li code { white-space: nowrap; }
+/* ...but a code block inside a list item is still a block: it has to keep the
+   pre-wrap it inherits, or a long line runs off the page instead of folding. */
+li pre code { white-space: inherit; }
+
 /* ---------- tables ---------- */
 /* Tables may split across pages; only their rows may not. Forbidding the
    whole table from breaking looks tidy until one grows past a page, at
