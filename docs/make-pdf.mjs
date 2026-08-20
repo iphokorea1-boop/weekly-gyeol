@@ -6,6 +6,7 @@ import { statSync } from "node:fs";
 const DOCS = [
   { html: "docs/handover.html", pdf: "docs/주간결-인수인계-문서.pdf", title: "주간결 인수인계 문서" },
   { html: "docs/guide.html",    pdf: "docs/주간결-코드-안내서.pdf",   title: "주간결 코드 안내서" },
+  { html: "docs/changelog.html", pdf: "docs/주간결-변경-사항.pdf",   title: "주간결 변경 사항" },
 ];
 
 // 저장소 루트에서 실행하십시오: node docs/make-pdf.mjs
