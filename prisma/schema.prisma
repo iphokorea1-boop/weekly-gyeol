@@ -25,6 +25,10 @@ model User {
   // rather than every single day the cron runs.
   lastNudgeAt  DateTime?
   nudgeEmails  Boolean   @default(true)
+  // The morning briefing is a separate switch from the nudge: turning off a
+  // mail that arrives every day must not also silence the one that only shows
+  // up when the app has been ignored for days.
+  dailyDigest  Boolean   @default(true)
 
   tasks    Task[]
   sessions Session[]
