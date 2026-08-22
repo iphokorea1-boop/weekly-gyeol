@@ -14,7 +14,7 @@
   <p class="sub">초안 문서 이후에 무엇이 더해지고, 무엇이 지워지고,
      무엇이 잘못됐는가. 인수인계 문서의 부록입니다.</p>
   <div class="meta">
-    <b>다루는 구간</b> &nbsp;<code>753c3d9</code> (2026-08-19) &rarr; <code>90d8eda</code> (2026-08-22)<br>
+    <b>다루는 구간</b> &nbsp;<code>753c3d9</code> (2026-08-19) &rarr; <code>9177a25</code> (2026-08-22)<br>
     <b>기준 문서</b> &nbsp;주간결 인수인계 문서 (2026-08-19 판)<br>
     <b>운영 주소</b> &nbsp;weekly-gyeol.vercel.app<br>
     <b>문서 작성</b> &nbsp;2026-08-20 (2026-08-22 갱신)
@@ -26,17 +26,17 @@
 <p class="lead">인수인계 문서 초안을 이미 읽으셨다면, <strong>다시 읽어야 할 부분은
 이 문서에 전부 들어 있습니다.</strong> 23쪽을 처음부터 다시 넘길 필요가 없습니다.</p>
 
-<p>초안이 나온 뒤 기능 일곱 가지가 붙었고, 죽은 코드가 정리됐고,
+<p>초안이 나온 뒤 기능 여덟 가지가 붙었고, 죽은 코드가 정리됐고,
 <strong>운영 데이터베이스가 한 번 통째로 지워졌습니다.</strong> 마지막 것이 이
 구간에서 가장 중요한 사건이며, 그 대응으로 개발 환경의 구조 자체가 바뀌었습니다.
-10장을 먼저 읽으셔도 좋습니다.</p>
+11장을 먼저 읽으셔도 좋습니다.</p>
 
 <div class="box tip">
   <span class="t">본 문서 두 개는 이미 갱신돼 있습니다</span>
-  <p>같은 폴더의 인수인계 문서와 코드 안내서 PDF는 <code>90d8eda</code> 기준으로 다시
+  <p>같은 폴더의 인수인계 문서와 코드 안내서 PDF는 <code>9177a25</code> 기준으로 다시
   만들어졌으므로, 여기 적힌 내용이 그 안에도 반영되어 있습니다. 이 부록은
   <strong>"어디가 달라졌는지"</strong>만 뽑아 놓은 것입니다. 어느 절이 새로 생겼는지는
-  11장의 대조표에 있습니다.</p>
+  12장의 대조표에 있습니다.</p>
 </div>
 
 <h3>한 장 요약</h3>
@@ -45,7 +45,7 @@
   <tr><th style="width:24%">항목</th><th>내용</th></tr>
   <tr><td>새 기능</td><td>공휴일 자동 표시 &middot; 드래그로 일정 옮기기 &middot; 활동 촉진 메일
       &middot; 날짜를 눌러 바로 추가 &middot; 단축키 &middot; <strong>아침 브리핑 메일</strong>
-      &middot; <strong>한글 글꼴</strong></td></tr>
+      &middot; <strong>한글 글꼴</strong> &middot; <strong>폰 홈 화면 설치</strong></td></tr>
   <tr><td>정리</td><td>운영 DB를 통째로 지울 수 있던 <code>db:seed</code> 삭제,
       미사용 파일 8개 제거, <code>README.md</code> 재작성</td></tr>
   <tr><td>사고</td><td>운영 데이터베이스 전체 초기화 (2026-08-20). 시점 복원으로 전량 회수</td></tr>
@@ -56,7 +56,7 @@
       <code>dailyDigest</code>)</td></tr>
   <tr><td>새 환경변수</td><td><code>CRON_SECRET</code>, <code>RESEND_API_KEY</code>,
       <code>MAIL_FROM</code>, <code>NUDGE_AFTER_DAYS</code>, <code>APP_URL</code></td></tr>
-  <tr><td>코드 변화</td><td>새 파일 18개, 삭제 8개. 약 +3,800줄 / &minus;800줄</td></tr>
+  <tr><td>코드 변화</td><td>새 파일 19개, 삭제 8개. 약 +4,000줄 / &minus;800줄</td></tr>
   <tr><td>크론</td><td>2개. <code>/api/cron/nudge</code>(밤 8시) &middot;
       <code>/api/cron/digest</code>(아침 7시)</td></tr>
   <tr><td>지금 가장 값어치 있는 다음 일</td><td>삭제 되돌리기.
@@ -82,11 +82,11 @@
   <tr><td><code>921635c</code></td><td>Record the drag-and-drop decisions&hellip;</td>
       <td>인수인계 문서 3.10 추가</td></tr>
   <tr><td><code>123d753</code></td><td>Remove a seed script that would have wiped the live database</td>
-      <td>중간 점검. 미사용 코드 정리와 <code>README.md</code> 재작성 (9장)</td></tr>
+      <td>중간 점검. 미사용 코드 정리와 <code>README.md</code> 재작성 (10장)</td></tr>
   <tr><td><code>40551c4</code></td><td>Note the removed seed script in the handover docs</td>
       <td>문서 반영</td></tr>
   <tr><td><code>925acef</code></td><td>Email an account that has gone quiet for a few days</td>
-      <td>활동 촉진 메일 (4장). 같은 날 개발용 DB를 분리했고, 그 계기가 10장의 사고</td></tr>
+      <td>활동 촉진 메일 (4장). 같은 날 개발용 DB를 분리했고, 그 계기가 11장의 사고</td></tr>
   <tr><td><code>44fd91f</code></td><td>Record the second data loss, and the separation that answers it</td>
       <td>인수인계 문서 8장을 8.1/8.2로 분리, 7장 위험 목록 갱신</td></tr>
   <tr><td><code>d5d17e5</code></td><td>Record that the nudge mail lands in spam without a domain</td>
@@ -104,8 +104,12 @@
       <td>매일 아침 그날 할 일을 한 통으로. 촉진 메일과 <strong>스위치가 따로</strong>이며
           할 일이 없는 날은 건너뜀(7장)</td></tr>
   <tr><td><code>90d8eda</code></td><td>Draw Hangul with a font that was designed for it</td>
-      <td>쓰고 있던 글꼴에 한글이 없어 기기마다 다르게 보였음(8장).
-          <strong>현재 최신</strong></td></tr>
+      <td>쓰고 있던 글꼴에 한글이 없어 기기마다 다르게 보였음(8장)</td></tr>
+  <tr><td><code>aa0a6f3</code></td><td>Record the morning briefing and the font change in the docs</td>
+      <td>인수인계 문서 3.14 &middot; 3.15 추가</td></tr>
+  <tr><td><code>9177a25</code></td><td>Let the app be kept on a phone's home screen</td>
+      <td>매니페스트와 아이콘. 인증 문지기가 매니페스트를 <strong>조용히 막고
+          있던 것</strong>도 함께 고침(9장). <strong>현재 최신</strong></td></tr>
 </table>
 
 <h2><span class="n">2</span>공휴일: 저장하지 않고 계산한다</h2>
@@ -588,10 +592,81 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 
 <p>Geist Mono가 <code>--font-mono</code>를 채우고 있었는데, <strong>그 토큰을 쓰는
 곳이 한 군데도 없었습니다.</strong> 쓰이지 않는데 preload는 걸려 있어 페이지마다
-헛다운로드가 하나씩 있었습니다. 9장의 정리와 같은 종류의 문제입니다 &mdash; 쓰이지
+헛다운로드가 하나씩 있었습니다. 10장의 정리와 같은 종류의 문제입니다 &mdash; 쓰이지
 않는 것이 남아 있으면 읽는 사람이 <strong>쓰인다고 믿습니다.</strong></p>
 
-<h2><span class="n">9</span>중간 점검: 지운 것</h2>
+<h2><span class="n">9</span>폰에서 쓸 수 있게</h2>
+
+<p class="lead">폰에서 되는지 <strong>재어 보고</strong>, 홈 화면에 둘 수 있게
+만들었습니다. 아이폰 14(390px)와 갤럭시 S9+(320px) 두 대로 확인했습니다.</p>
+
+<h3>9.1 이미 되고 있던 것</h3>
+
+<table>
+  <tr><th style="width:40%">항목</th><th>결과</th></tr>
+  <tr><td>레이아웃</td><td>4개 화면 모두 <strong>가로 스크롤 없음</strong> (390px, 320px)</td></tr>
+  <tr><td>내비게이션</td><td>글자가 접히고 아이콘만 남음</td></tr>
+  <tr><td>손가락으로 할 일 추가</td><td>됨</td></tr>
+  <tr><td>달력 칸 탭 &rarr; 추가 폼</td><td>됨. 팝오버가 화면 안에 들어옴</td></tr>
+  <tr><td>손가락 드래그로 날짜 옮기기</td><td>됨 (8/17 &rarr; 8/18 실제 이동 확인)</td></tr>
+</table>
+
+<p>드래그가 되는 것은 우연이 아닙니다. 3장에서 HTML5 드래그 API 대신 포인터
+이벤트를 고른 이유가 <strong>"터치에서는 HTML5 API가 아예 뜨지 않는다"</strong>였고,
+그 판단이 여기서 값을 했습니다. 실제 <code>pointerType=touch</code> 이벤트로
+확인했습니다.</p>
+
+<div class="box tip">
+  <span class="t">이 확인 과정에서 배운 것</span>
+  <p>처음 세 번은 "드래그 안 됨"으로 나왔는데, 전부 <strong>제 시험 코드가 엉뚱한
+  칩을 집고 있었습니다.</strong> 갈라낸 방법은 같은 드래그를 <strong>데스크톱
+  마우스로도</strong> 돌려본 것입니다. 둘 다 실패하면 시험이 잘못된 것이고, 마우스만
+  성공하면 터치가 문제입니다. 실제로는 둘 다 실패했고 &mdash; 시험이 틀렸다는
+  뜻이었습니다.</p>
+</div>
+
+<h3>9.2 홈 화면에 두기</h3>
+
+<p>매니페스트, 아이콘, 그리고 iOS용 메타 태그를 넣었습니다. 이제 홈 화면에서 열면
+<strong>주소창 없이</strong> 뜹니다.</p>
+
+<p>파일 하나로 끝나지 않은 이유는 <strong>iOS가 웹 매니페스트를 읽지 않기</strong>
+때문입니다. 사파리는 <code>apple-mobile-web-app-*</code> 메타 태그만 봅니다. 같은
+내용을 두 군데에 적어야 하고, 어긋나면 두 운영체제가 서로 다른 이름을 씁니다.</p>
+
+<div class="box trap">
+  <span class="t">인증 문지기가 매니페스트를 막고 있었습니다</span>
+  <p>브라우저는 매니페스트를 <strong>쿠키 없이</strong> 가져갑니다. 그래서
+  <code>proxy.ts</code>가 그 요청을 <code>/login</code>으로 돌려보내고 있었고,
+  <strong>아무도 오류를 보고하지 않았습니다.</strong> 설치 안내가 그냥 안 뜰 뿐입니다.</p>
+  <p>예외 목록에 <code>manifest.webmanifest</code> 하나만 더했습니다.
+  <code>icon</code>은 <strong>일부러 넣지 않았습니다</strong> &mdash; 그 목록은 앞부분
+  일치라서, 적었다면 나중에 만들 <code>/icons</code> 페이지까지 인증을 건너뛰게
+  됩니다. 아이콘 주소는 <code>.png</code>로 끝나 이미 있던 규칙에 걸립니다.</p>
+</div>
+
+<p>확인은 <strong>브라우저와 같은 방식으로</strong> 했습니다 &mdash; 쿠키를 빼고
+요청해 매니페스트가 오류 없이 파싱되고 아이콘 세 개가 전부 200으로 오는 것,
+그리고 <code>/</code>, <code>/week</code>, <code>/month</code>, <code>/year</code>,
+<code>/iconsomething</code>은 <strong>여전히 로그인으로 튕기는</strong> 것까지.</p>
+
+<p>덤으로 <code>app/favicon.ico</code>가 아직 <strong>create-next-app이 넣어둔 Next.js
+로고</strong>였다는 것을 발견해 같은 세 막대 마크로 교체했습니다.</p>
+
+<h3>9.3 폰에서 아직 아쉬운 것</h3>
+
+<ul>
+  <li><strong>주간&middot;월간은 옆으로 밀어야 합니다.</strong> 7일을 390px에 넣을 수
+      없어 격자가 760px로 고정되고 자기 상자 안에서 가로 스크롤됩니다. 잘리지는
+      않지만 일주일이 한눈에 안 들어옵니다.</li>
+  <li><strong>할 일 칸에 손가락을 대면 세로 스크롤이 안 됩니다.</strong> 드래그용으로
+      <code>touch-action: none</code>이 걸려 있어서입니다. 빈 곳을 짚으면 정상입니다.</li>
+  <li><strong>연간 히트맵 칸이 26px</strong>이라 정확히 누르기 빡빡합니다.</li>
+  <li><strong>설치 배너는 안 뜹니다.</strong> 브라우저 메뉴의 "홈 화면에 추가"로만
+      됩니다. 자동 배너는 서비스 워커를 요구합니다.</li>
+</ul>
+
+<h2><span class="n">10</span>중간 점검: 지운 것</h2>
 
 <p class="lead">쓰이지 않는 코드는 읽는 사람에게 <strong>거짓말을 합니다.</strong>
 있으니까 필요하겠거니 하고 유지하게 되기 때문입니다.</p>
@@ -602,7 +677,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
   지우고</strong> 예시 데이터를 넣도록 되어 있었습니다. 당시 로컬 <code>.env</code>는
   운영 데이터베이스를 보고 있었으므로, <strong>한 번만 눌렀으면 운영 데이터가
   전부 사라졌을 것입니다.</strong> 그날 늦게 실제로 다른 경로로 같은 일이
-  일어났습니다(10장).</p>
+  일어났습니다(11장).</p>
 </div>
 
 <table>
@@ -623,13 +698,13 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 설명서로 다시 썼습니다.</strong> 세 가지 분류, 문서 위치, 명령 목록,
 그리고 지금 조심해야 할 것들이 들어 있습니다.</p>
 
-<h2><span class="n">10</span>사고: 데이터베이스 전체 초기화</h2>
+<h2><span class="n">11</span>사고: 데이터베이스 전체 초기화</h2>
 
 <p class="lead">이 구간에서 가장 중요한 사건입니다. 초안 문서의 8장은 사고 한 건을
 다뤘지만, 지금은 <strong>두 건이고 뿌리가 같습니다</strong> &mdash; 개발 작업이 운영
 데이터베이스를 직접 보고 있었다는 것.</p>
 
-<h3>10.1 무슨 일이 있었나</h3>
+<h3>11.1 무슨 일이 있었나</h3>
 
 <table>
   <tr><th style="width:16%">발생</th><td>2026-08-20 약 19:00 KST, 촉진 메일 기능의
@@ -646,7 +721,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
       되돌림. <strong>0.39초, 전량 복구</strong></td></tr>
 </table>
 
-<h3>10.2 왜 막지 못했나</h3>
+<h3>11.2 왜 막지 못했나</h3>
 
 <p>인수인계 문서 6.3에는 <strong>그때도</strong> 읽기 전용인 <code>--from-url</code>을
 쓰라고 적혀 있었습니다. <strong>절차서가 틀린 것이 아니라 지키지 않은 것입니다.</strong></p>
@@ -656,7 +731,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 점입니다. <strong>권고와 행동이 어긋났습니다.</strong> 8월 18일 사고의 근본 원인을
 그대로 둔 채 다른 작업을 계속한 결과이기도 합니다.</p>
 
-<h3>10.3 실제 대책: 이름을 갈라놓기</h3>
+<h3>11.3 실제 대책: 이름을 갈라놓기</h3>
 
 <p>같은 날 Neon에 <code>dev</code> 브랜치를 만들어 로컬 <code>.env</code>가 그쪽만
 보게 했습니다. 운영 주소는 같은 파일에 남아 있지만 <strong><code>PROD_</code> 접두사를
@@ -689,22 +764,22 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
   </ul>
 </div>
 
-<h3>10.4 초안에서 사라진 위험 항목</h3>
+<h3>11.4 초안에서 사라진 위험 항목</h3>
 
 <p>초안 7장의 <strong>"개발용 DB 미분리 &mdash; 심각도 높음"</strong> 항목은
 해소되어 목록에서 빠졌습니다. 대신 <strong>"이력 보관이 6시간뿐"</strong>과
 <strong>"운영 주소가 로컬 <code>.env</code>에 남아 있음"</strong>이 들어갔습니다.
 위험이 사라진 것이 아니라 <strong>모양이 바뀐 것</strong>으로 읽으십시오.</p>
 
-<h2><span class="n">11</span>본 문서 어디가 바뀌었나</h2>
+<h2><span class="n">12</span>본 문서 어디가 바뀌었나</h2>
 
 <p class="lead">초안을 종이로 갖고 계시다면, 갱신본에서 <strong>이 절들만</strong>
 다시 보시면 됩니다.</p>
 
 <table>
   <tr><th style="width:14%">문서</th><th style="width:20%">위치</th><th>변경</th></tr>
-  <tr><td rowspan="16">인수인계<br>문서</td>
-      <td>2장</td><td>커밋 표에 9줄 추가 (12개 &rarr; 21개)</td></tr>
+  <tr><td rowspan="19">인수인계<br>문서</td>
+      <td>2장</td><td>커밋 표에 10줄 추가 (12개 &rarr; 22개)</td></tr>
   <tr><td><strong>3.9 (신규)</strong></td><td>공휴일을 저장하지 않고 계산하는 이유</td></tr>
   <tr><td><strong>3.10 (신규)</strong></td><td>드래그를 포인터 이벤트로 만든 이유,
       배치 계산이 클라이언트로 간 이유</td></tr>
@@ -718,14 +793,18 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
       스위치를 나눈 이유, 빈 날에 보내지 않는 이유</td></tr>
   <tr><td><strong>3.15 (신규)</strong></td><td>한글이 있는 글꼴로 바꾼 이유,
       <code>subsets</code>가 무엇을 고르는 옵션인지</td></tr>
+  <tr><td><strong>3.16 (신규)</strong></td><td>홈 화면 설치가 파일 하나로 끝나지 않는 이유,
+      매니페스트가 쿠키 없이 요청된다는 것, 문지기 예외를 좁게 둔 이유</td></tr>
   <tr><td>4.2</td><td><code>User</code> 행에 메일 스위치 두 개</td></tr>
   <tr><td>4.3</td><td>파일 지도에 보드 &middot; 드래그 엔진 &middot; 추가 폼 &middot;
-      단축키 &middot; 브리핑 8줄</td></tr>
+      단축키 &middot; 브리핑 &middot; 매니페스트 9줄</td></tr>
   <tr><td>6.2</td><td>환경변수 5개 추가, <strong>dev 브랜치 함정 상자 신규</strong></td></tr>
   <tr><td>6.3</td><td><strong><code>--shadow-database-url</code> 금지 상자 신규</strong></td></tr>
-  <tr><td>7장</td><td>항목 1개 삭제, <strong>8개 추가</strong> (10.4 참조)</td></tr>
+  <tr><td>7장</td><td>항목 1개 삭제, <strong>8개 추가</strong> (11.4 참조)</td></tr>
   <tr><td>7장</td><td>"특정 날짜를 키보드로 고를 수 없음" 항목 신규 (5.4 · 6장)</td></tr>
   <tr><td>7장</td><td>"메일 설정 화면이 앱 안에 없음" 항목 신규 (7장)</td></tr>
+  <tr><td>7장</td><td>"주간·월간이 폰에서 옆으로 밀린다" 항목 신규 (9.3)</td></tr>
+  <tr><td>7장</td><td>"설치 배너는 뜨지 않음" 항목 신규 (9.3)</td></tr>
   <tr><td><strong>8장</strong></td><td>8.1 / <strong>8.2 (신규)</strong>로 분리.
       제목이 "데이터 1건 손실"에서 "사고 기록"으로</td></tr>
   <tr><td rowspan="4">코드<br>안내서</td>
@@ -743,9 +822,9 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
 통째로 비었습니다.</strong> 이제 표는 나뉘고 <strong>행만</strong> 나뉘지 않습니다.
 인수인계 문서가 25쪽에서 23쪽으로 줄어든 것은 내용이 빠져서가 아니라 이 때문입니다.</p>
 
-<h2><span class="n">12</span>지금 상태와 다음 일</h2>
+<h2><span class="n">13</span>지금 상태와 다음 일</h2>
 
-<h3>12.1 운영에서 확인된 것</h3>
+<h3>13.1 운영에서 확인된 것</h3>
 
 <table>
   <tr><th style="width:32%">항목</th><th>상태</th></tr>
@@ -759,7 +838,7 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
   <tr><td>발송 주기</td><td><code>afterDays: 3</code> 반영 확인</td></tr>
 </table>
 
-<h3>12.2 다음에 할 일</h3>
+<h3>13.2 다음에 할 일</h3>
 
 <ol class="steps">
   <li><strong>운영 마이그레이션 적용.</strong> <code>dailyDigest</code> 컬럼이 아직
@@ -775,6 +854,9 @@ SDK를 쓰지 않아 의존성이 늘지 않으며, 인증을 직접 구현한 �
       행이 0건이므로 지금은 조일 수 있습니다.</li>
   <li><strong>할 일 수정.</strong> 제목과 시간을 고치는 화면이 아직 없습니다.
       3.4의 키보드 문제도 함께 풀립니다.</li>
+  <li><strong>폰 전용 주간 화면.</strong> 홈 화면에 설치되면 폰에서 여는 횟수가
+      늘어나는데, 지금 주간은 옆으로 밀어야 보입니다(9.3). 하루씩 넘기거나 세로
+      목록으로 바꾸는 것이 다음으로 큰 개선입니다.</li>
   <li><strong>메일 설정 화면.</strong> 지금은 두 메일을 끄고 켜는 길이 메일 속
       링크뿐입니다. 스위치는 이미 둘로 나뉘어 있으니(7.1) 화면 하나면 됩니다.</li>
   <li><strong>비밀번호 재설정 &middot; 로그인 시도 제한.</strong> 본인 외의 사람이

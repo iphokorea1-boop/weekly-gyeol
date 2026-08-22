@@ -16,7 +16,7 @@
   <div class="meta">
     <b>대상 저장소</b> &nbsp;github.com/iphokorea1-boop/weekly-gyeol<br>
     <b>운영 주소</b> &nbsp;weekly-gyeol.vercel.app<br>
-    <b>기준 커밋</b> &nbsp;90d8eda (2026-08-22)<br>
+    <b>기준 커밋</b> &nbsp;9177a25 (2026-08-22)<br>
     <b>문서 작성</b> &nbsp;2026-08-19 (2026-08-22 갱신)
   </div>
 </section>
@@ -115,7 +115,7 @@
 
 <h2><span class="n">2</span>개발 연혁</h2>
 
-<p class="lead">커밋 21개. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
+<p class="lead">커밋 22개. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
 과거 결정의 맥락을 추적할 때 이 표에서 커밋 해시를 찾아 <code>git show</code>로 보십시오.</p>
 
 <table>
@@ -171,6 +171,9 @@
   <tr><td><code>90d8eda</code></td><td>Draw Hangul with a font that was designed for it</td>
       <td>한글이 없는 글꼴을 쓰고 있어 기기마다 다르게 보였음. Noto Sans KR로
           교체하고 쓰이지 않던 Geist Mono 제거(3.15)</td></tr>
+  <tr><td><code>9177a25</code></td><td>Let the app be kept on a phone's home screen</td>
+      <td>매니페스트와 아이콘. 인증 문지기가 매니페스트를 <strong>조용히
+          막고 있던 것</strong>도 함께 고침(3.16)</td></tr>
 </table>
 
 <div class="box tip">
@@ -637,6 +640,57 @@
 걸려 있어 페이지마다 헛다운로드가 하나씩 있었습니다. 지금
 <code>--font-mono</code>는 운영체제의 고정폭 글꼴을 가리킵니다.</p>
 
+<h3>3.16 폰 홈 화면에 두게 만드는 것은 파일 하나가 아니다</h3>
+
+<p><code>app/manifest.ts</code> 하나만 있으면 될 것 같지만 아닙니다. <strong>iOS는 웹
+매니페스트를 읽지 않습니다.</strong> 사파리의 "홈 화면에 추가"는
+<code>apple-mobile-web-app-*</code> 메타 태그와 <code>apple-touch-icon</code>만 봅니다.
+그래서 같은 내용을 두 군데에 적었고(<code>layout.tsx</code>의
+<code>appleWebApp</code>), 둘이 어긋나면 안드로이드와 아이폰이 서로 다른 이름과
+아이콘을 씁니다.</p>
+
+<p>핵심은 <code>display: "standalone"</code> 한 줄입니다. 홈 화면에서 열었을 때 주소창이
+사라지고, 폰에서 <strong>"북마크한 웹사이트"와 "앱"을 가르는 것이 대부분 이
+차이</strong>입니다.</p>
+
+<div class="box trap">
+  <span class="t">매니페스트는 쿠키 없이 요청됩니다</span>
+  <p><code>&lt;link rel="manifest"&gt;</code>는 기본적으로 <strong>자격 증명을 붙이지
+  않고</strong> 가져옵니다. 그래서 <code>proxy.ts</code>의 인증 문지기가 이 요청을
+  <code>/login</code>으로 돌려보내고 있었습니다.</p>
+  <p>고약한 점은 <strong>아무도 오류를 보고하지 않는다</strong>는 것입니다. 설치
+  안내가 그냥 안 뜰 뿐이라, 매니페스트를 잘못 썼다고 오해하기 딱 좋습니다. 확인은
+  브라우저와 같은 방식으로 &mdash; 쿠키를 빼고 &mdash; 직접 받아보는 것뿐입니다.</p>
+</div>
+
+<div class="box why">
+  <span class="t">문지기 예외에 <code>icon</code>을 적지 않은 이유</span>
+  <p>matcher의 제외 목록은 <strong>앞부분 일치</strong>입니다. <code>icon</code>을
+  적으면 나중에 만들 <code>/icons</code> 같은 페이지까지 인증을 건너뛰게 됩니다.</p>
+  <p>적을 필요도 없습니다. Next가 생성한 아이콘의 주소는 <code>/icon.png</code>과
+  <code>/apple-icon.png</code>이라, 이미 있던 <strong>확장자 규칙에 그대로
+  걸립니다.</strong> 예외는 <code>manifest.webmanifest</code> 하나만 늘었습니다.</p>
+</div>
+
+<p>아이콘은 <code>app/components/nav.tsx</code>의 세 막대 마크를 그대로 그렸습니다.
+안드로이드는 런처 모양대로 아이콘을 <strong>잘라내므로</strong>
+<code>purpose: "maskable"</code>용을 따로 두고 그림을 가운데로 더 당겼습니다. 잘리지
+않는 쪽과 같은 파일을 쓰면 막대 끝이 깎입니다.</p>
+
+<p><code>app/favicon.ico</code>는 <strong>create-next-app이 넣어둔 Next.js 로고가 그대로
+남아 있었습니다.</strong> 같은 마크로 교체했습니다. <code>.ico</code> 안에는 PNG를 그대로
+넣을 수 있어(Vista 이후 형식) 별도 인코더가 필요 없습니다.</p>
+
+<div class="box warn">
+  <span class="t">여기까지로 되는 것과 안 되는 것</span>
+  <p><strong>됩니다</strong> &mdash; 두 운영체제 모두 브라우저 메뉴의 "홈 화면에 추가",
+  홈 화면 아이콘, 주소창 없는 실행, 상태 표시줄 색.</p>
+  <p><strong>안 됩니다</strong> &mdash; 안드로이드 크롬이 스스로 띄우는 <strong>설치
+  배너</strong>. 그건 <code>fetch</code> 처리기를 가진 서비스 워커를 요구합니다.
+  오프라인 동작도 없습니다. 서비스 워커는 캐시가 낡았을 때 사용자가 옛 화면에
+  갇히는 문제를 함께 데려오므로, 필요해지기 전까지 넣지 않았습니다.</p>
+</div>
+
 <h2><span class="n">4</span>시스템 구조</h2>
 
 <h3>4.1 전체 그림</h3>
@@ -755,6 +809,9 @@
       <td>단축키 표. 키를 해석하는 곳과 도움말이 같은 표를 씀(3.13)</td></tr>
   <tr><td><code>app/components/shortcuts.tsx</code></td>
       <td>키를 듣는 유일한 곳 + <code>?</code> 도움말 패널</td></tr>
+  <tr><td><code>app/manifest.ts</code></td>
+      <td>폰 홈 화면용 매니페스트. iOS는 이것을 읽지 않으므로 <code>layout.tsx</code>의
+          <code>appleWebApp</code>과 짝을 이룸(3.16)</td></tr>
   <tr><td><code>lib/digest.ts</code></td>
       <td>아침 브리핑의 문구와 &quot;보낼 만한 날인가&quot; 판단. <code>lib/nudge.ts</code>처럼
           순수 함수라 DB나 가짜 시계 없이 시험됨(3.14)</td></tr>
@@ -944,6 +1001,19 @@
         않음")면 충분합니다. 근본 해결은 도메인을 사서 Resend에 인증하고
         <code>MAIL_FROM</code>만 바꾸는 것이며, <strong>그 한 줄로 끝나도록 환경변수로
         빼 두었습니다.</strong> 본인 외의 사람에게 보내려면 어차피 필요합니다.</td>
+  </tr>
+  <tr>
+    <td>주간&middot;월간이 폰에서 옆으로 밀린다</td><td>중간</td>
+    <td>격자가 <strong>760px로 고정</strong>이라 390px 화면에서는 자기 상자 안에서
+        가로로 스크롤됩니다. 잘리지는 않지만 <strong>일주일이 한눈에 들어오지
+        않습니다.</strong> 폰에서는 오늘 화면만 쓰게 되는 이유이며, 제대로 풀려면
+        폰 전용 주간 레이아웃(하루씩 넘기기 또는 세로 목록)이 필요합니다.</td>
+  </tr>
+  <tr>
+    <td>설치 배너는 뜨지 않음</td><td>낮음</td>
+    <td>홈 화면 추가는 <strong>브라우저 메뉴로만</strong> 됩니다. 안드로이드 크롬이
+        스스로 띄우는 설치 배너는 서비스 워커를 요구하는데, 서비스 워커는 캐시가
+        낡았을 때 사용자가 옛 화면에 갇히는 문제를 데려오므로 넣지 않았습니다(3.16).</td>
   </tr>
   <tr>
     <td>메일 설정 화면이 앱 안에 없음</td><td>중간</td>
@@ -1152,7 +1222,7 @@ DB 분리를 세 번 권고했다는 점입니다. <strong>권고와 행동이 �
 <hr>
 
 <p style="color:#63635e;font-size:9.6pt">
-이 문서는 커밋 <code>90d8eda</code> 기준입니다. 코드가 바뀌면 이 문서도 함께
+이 문서는 커밋 <code>9177a25</code> 기준입니다. 코드가 바뀌면 이 문서도 함께
 갱신하십시오. 특히 3장(핵심 설계 결정)과 7장(한계)은 사실과 어긋나는 순간
 문서 전체의 신뢰가 사라집니다. 코드와 다른 설명은 없는 것보다 나쁩니다.
 </p>
