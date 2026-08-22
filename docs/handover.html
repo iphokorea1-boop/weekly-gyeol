@@ -16,8 +16,8 @@
   <div class="meta">
     <b>대상 저장소</b> &nbsp;github.com/iphokorea1-boop/weekly-gyeol<br>
     <b>운영 주소</b> &nbsp;weekly-gyeol.vercel.app<br>
-    <b>기준 커밋</b> &nbsp;20e1b7e (2026-08-19)<br>
-    <b>문서 작성</b> &nbsp;2026-08-19
+    <b>기준 커밋</b> &nbsp;90d8eda (2026-08-22)<br>
+    <b>문서 작성</b> &nbsp;2026-08-19 (2026-08-22 갱신)
   </div>
 </section>
 
@@ -115,7 +115,7 @@
 
 <h2><span class="n">2</span>개발 연혁</h2>
 
-<p class="lead">커밋 17개. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
+<p class="lead">커밋 21개. 각 커밋이 무엇을 바꿨고 왜 필요했는지를 시간 순으로 정리합니다.
 과거 결정의 맥락을 추적할 때 이 표에서 커밋 해시를 찾아 <code>git show</code>로 보십시오.</p>
 
 <table>
@@ -160,6 +160,17 @@
   <tr><td><code>123d753</code></td><td>Remove a seed script that would have wiped the live database</td>
       <td>중간 점검. <code>db:seed</code>가 필터 없이 전체를 지우고 있었음.
           그 외 미사용 코드·자산 정리와 <code>README.md</code> 재작성</td></tr>
+  <tr><td><code>deb0b7e</code></td><td>Let a task be added by clicking the day it belongs on</td>
+      <td>달력에서 할 일을 <strong>만들 방법이 없었음</strong>. 빈 칸을 누르면 그
+          날짜로 폼이 열리게 함(3.12)</td></tr>
+  <tr><td><code>b9ceae2</code></td><td>Add keyboard shortcuts for moving around the app</td>
+      <td>글자 하나로 화면 이동, 화살표로 기간 이동. 한글 조합 중에는 멈춤(3.13)</td></tr>
+  <tr><td><code>3188ea4</code></td><td>Mail a briefing each morning of what the day holds</td>
+      <td>매일 아침 그날 할 일을 한 통으로. 촉진 메일과 <strong>스위치가 따로</strong>이며
+          빈 날에는 보내지 않음(3.14)</td></tr>
+  <tr><td><code>90d8eda</code></td><td>Draw Hangul with a font that was designed for it</td>
+      <td>한글이 없는 글꼴을 쓰고 있어 기기마다 다르게 보였음. Noto Sans KR로
+          교체하고 쓰이지 않던 Geist Mono 제거(3.15)</td></tr>
 </table>
 
 <div class="box tip">
@@ -547,6 +558,85 @@
   있는지. <code>isComposing</code>을 빼면 한글 첫 자음이 명령으로 새어 나갑니다.</p>
 </div>
 
+<h3>3.14 아침 브리핑은 촉진 메일과 다른 메일이다</h3>
+
+<p>매일 아침 7시, 그날 할 일을 한 통으로 보냅니다. 3.11의 촉진 메일과 코드가
+비슷하게 생겼지만 <strong>목적이 정반대</strong>라 합치지 않았습니다. 촉진 메일은
+앱을 <strong>열게 하려고</strong> 오고, 브리핑은 앱을 <strong>열지 않아도 되도록</strong>
+옵니다. 그래서 촉진 메일은 가장 밀린 3건만 이름을 부르고, 브리핑은 하루치를
+통째로 나열합니다.</p>
+
+<p>수신 거부 스위치도 따로입니다. <code>User.dailyDigest</code>가 새로 생겼고
+<code>nudgeEmails</code>와 별개로 움직입니다. <strong>매일 오는 메일을 껐다고 해서
+몇 주에 한 번 오는 메일까지 꺼지면 안 되기 때문</strong>입니다. 수신 거부 링크에
+<code>&amp;k=digest</code>가 붙어 어느 스위치인지 구분하고, <code>k</code>가 없으면
+촉진 메일로 읽습니다 &mdash; 이미 받은 편지함에 있는 옛 링크가 계속 옛 뜻으로
+동작해야 하기 때문입니다.</p>
+
+<div class="box why">
+  <span class="t">빈 날에는 보내지 않는다</span>
+  <p><code>hasSomethingToSay()</code>가 거짓이면 그 계정은 건너뜁니다. 아무것도
+  없는 날에 도착한 브리핑은 <strong>브리핑을 무시하는 습관을 가르치고</strong>, 그
+  습관은 내용이 있던 아침까지 함께 데려갑니다.</p>
+  <p>미배치 할 일은 <strong>일부러</strong> 이 판단에 넣지 않았습니다. 미배치함은
+  늘 비어 있지 않으므로, 세면 모든 날이 "내용 있는 날"이 되어 검사 자체가
+  무의미해집니다. 본문에는 숫자로만 나옵니다.</p>
+</div>
+
+<p>어젯밤에 이미 끝낸 항목은 빠집니다. 오늘 완료 기록이 있는 할 일과 루틴을
+걸러낸 뒤에 목록을 만듭니다. 다 한 일을 지나쳐 읽어야 하는 브리핑은 브리핑이
+아닙니다.</p>
+
+<p>제목 줄이 메일 전체를 대신합니다. <code>오늘 할 일 5건 · 8월 22일</code>처럼
+숫자와 날짜만 적혀 있어, 받은 편지함 목록만 훑고 열지 않아도 하루가 파악됩니다.
+오늘 일정이 하나도 없고 밀린 것만 있으면 제목이 <code>기한이 지난 할 일 3건</code>
+으로 바뀝니다.</p>
+
+<div class="box trap">
+  <span class="t">크론 시각이 UTC이고 오차가 한 시간이다</span>
+  <p><code>vercel.json</code>에는 <code>0 22 * * *</code>로 적혀 있습니다. UTC 22시가
+  서울 다음 날 아침 7시입니다. <strong>Vercel 무료 요금제의 크론은 정시가 아니라
+  &plusmn;59분</strong>이라 실제로는 6시~8시 사이에 뜁니다.</p>
+  <p>그래도 날짜가 어긋나지 않는 것은 본문을 <code>todayInSeoul()</code>로 만들기
+  때문입니다. 크론이 몇 시에 깨든 <strong>서울 달력이 가리키는 그날</strong>을
+  브리핑합니다. 발송 시각을 옮기려면 원하는 서울 시각에서 9를 빼십시오.</p>
+</div>
+
+<p>인증·마스킹·결과 보고는 촉진 메일의 크론을 그대로 따릅니다
+(<code>timingSafeEqual</code>, <code>CRON_SECRET</code> 없으면 503). 계정마다 왜
+보냈는지 혹은 왜 건너뛰었는지를 <code>수신 거부</code>·<code>오늘 할 일 없음</code>
+같은 문구로 남기므로, 메일이 안 왔을 때 <strong>응답만 보면 원인을 알 수
+있습니다.</strong></p>
+
+<h3>3.15 한글로 쓰는 앱이니 한글이 있는 글꼴을 쓴다</h3>
+
+<p>화면의 거의 모든 글자가 한글인데, 초기 설정의 Geist에는 <strong>한글이 아예
+없었습니다.</strong> 한글은 전부 운영체제 기본 글꼴로 떨어져 윈도우에서는 맑은
+고딕, 맥에서는 Apple SD Gothic Neo로 보였습니다. 같은 화면이 기기마다 달랐고,
+시각 표시의 숫자(Geist)와 그 옆의 한글(다른 글꼴)이 굵기도 폭도 맞지
+않았습니다.</p>
+
+<p>Noto Sans KR은 두 문자를 <strong>한 가족</strong>으로 그립니다. Google Fonts에
+있어 <code>next/font/google</code>이 빌드 때 내려받아 <strong>우리 도메인에서
+직접</strong> 내보내므로, 사용자의 브라우저는 Google에 요청하지 않습니다.</p>
+
+<div class="box why">
+  <span class="t"><code>subsets</code>는 내려받을 것을 고르는 옵션이 아니다</span>
+  <p>이름과 달리 <code>subsets: ["latin"]</code>은 <strong>미리 불러올(preload) 조각을
+  고르는 것</strong>이고, 한글을 포함한 모든 조각은 어차피 전부 자체 호스팅됩니다
+  (<code>.next/static/media</code>에 124개). 한글을 적으면 <code>&lt;head&gt;</code>에
+  preload 링크가 100개 넘게 박힙니다.</p>
+  <p>적지 않아도 손해가 없습니다. 글꼴이 <code>unicode-range</code>로 쪼개져 있어
+  <strong>브라우저가 그 페이지에 실제로 나온 글자의 조각만</strong> 가져갑니다.
+  운영 빌드에서 측정한 첫 방문 다운로드는 오늘 화면 81 KB(12개), 달력 화면
+  99 KB(13개)였습니다.</p>
+</div>
+
+<p>같이 지운 것이 있습니다. Geist Mono는 <code>--font-mono</code>를 채우고 있었지만
+<strong>그 토큰을 쓰는 곳이 한 군데도 없었습니다.</strong> 쓰이지 않는데 preload는
+걸려 있어 페이지마다 헛다운로드가 하나씩 있었습니다. 지금
+<code>--font-mono</code>는 운영체제의 고정폭 글꼴을 가리킵니다.</p>
+
 <h2><span class="n">4</span>시스템 구조</h2>
 
 <h3>4.1 전체 그림</h3>
@@ -608,8 +698,10 @@
 <table>
   <tr><th style="width:20%">테이블</th><th style="width:30%">핵심 컬럼</th><th>비고</th></tr>
   <tr><td><code>User</code></td>
-      <td><code>email</code>(유일), <code>passwordHash</code>, <code>name</code></td>
-      <td>이메일은 소문자·공백제거 후 저장. 대소문자만 다른 중복 가입 방지</td></tr>
+      <td><code>email</code>(유일), <code>passwordHash</code>, <code>name</code>,
+          <code>nudgeEmails</code>, <code>dailyDigest</code></td>
+      <td>이메일은 소문자·공백제거 후 저장. 대소문자만 다른 중복 가입 방지.
+          메일 스위치가 <strong>둘</strong>인 이유는 3.14</td></tr>
   <tr><td><code>Session</code></td>
       <td><code>tokenHash</code>(유일), <code>userId</code>, <code>expiresAt</code></td>
       <td>쿠키 값의 SHA-256만 보관. 만료는 서버에서 판단</td></tr>
@@ -663,6 +755,9 @@
       <td>단축키 표. 키를 해석하는 곳과 도움말이 같은 표를 씀(3.13)</td></tr>
   <tr><td><code>app/components/shortcuts.tsx</code></td>
       <td>키를 듣는 유일한 곳 + <code>?</code> 도움말 패널</td></tr>
+  <tr><td><code>lib/digest.ts</code></td>
+      <td>아침 브리핑의 문구와 &quot;보낼 만한 날인가&quot; 판단. <code>lib/nudge.ts</code>처럼
+          순수 함수라 DB나 가짜 시계 없이 시험됨(3.14)</td></tr>
   <tr><td><code>app/components/*</code></td>
       <td>화면 조각. 상호작용이 있으면 <code>"use client"</code></td></tr>
   <tr><td><code>app/api/*</code></td>
@@ -742,7 +837,8 @@
       <td>마이그레이션 전용 <strong>직접</strong> 연결. <code>prisma migrate</code>는
           세션 단위 연결이 필요해 풀러로는 동작하지 않음</td></tr>
   <tr><td><code>CRON_SECRET</code></td>
-      <td>Vercel 크론이 <code>/api/cron/nudge</code>를 부를 때 붙이는 인증값.
+      <td>Vercel 크론이 <code>/api/cron/nudge</code>와 <code>/api/cron/digest</code>를
+          부를 때 붙이는 인증값.
           없으면 엔드포인트가 503으로 스스로를 막음</td></tr>
   <tr><td><code>RESEND_API_KEY</code></td>
       <td>메일 발송 키. 없으면 "미설정"이라 보고하고 보내지 않음</td></tr>
@@ -848,6 +944,14 @@
         않음")면 충분합니다. 근본 해결은 도메인을 사서 Resend에 인증하고
         <code>MAIL_FROM</code>만 바꾸는 것이며, <strong>그 한 줄로 끝나도록 환경변수로
         빼 두었습니다.</strong> 본인 외의 사람에게 보내려면 어차피 필요합니다.</td>
+  </tr>
+  <tr>
+    <td>메일 설정 화면이 앱 안에 없음</td><td>중간</td>
+    <td>촉진 메일과 아침 브리핑을 <strong>끄는 길이 메일 속 링크뿐</strong>입니다.
+        다시 켜는 화면은 링크를 눌렀을 때 나오는 페이지에만 있으므로, 메일을 지운
+        뒤에 마음이 바뀌면 <strong>DB에서 직접 고치는 수밖에 없습니다.</strong>
+        스위치는 이미 <code>User.nudgeEmails</code>·<code>User.dailyDigest</code>로
+        나뉘어 있으니, 설정 화면 하나가 두 개를 함께 다루면 됩니다.</td>
   </tr>
   <tr>
     <td>환경변수는 재배포해야 반영됨</td><td>낮음</td>
@@ -1048,7 +1152,7 @@ DB 분리를 세 번 권고했다는 점입니다. <strong>권고와 행동이 �
 <hr>
 
 <p style="color:#63635e;font-size:9.6pt">
-이 문서는 커밋 <code>20e1b7e</code> 기준입니다. 코드가 바뀌면 이 문서도 함께
+이 문서는 커밋 <code>90d8eda</code> 기준입니다. 코드가 바뀌면 이 문서도 함께
 갱신하십시오. 특히 3장(핵심 설계 결정)과 7장(한계)은 사실과 어긋나는 순간
 문서 전체의 신뢰가 사라집니다. 코드와 다른 설명은 없는 것보다 나쁩니다.
 </p>
