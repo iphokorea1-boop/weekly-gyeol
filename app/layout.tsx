@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import Nav from "@/app/components/nav";
 import { QuickAddProvider } from "@/app/components/quick-add";
@@ -28,6 +28,23 @@ const notoSansKr = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: "주간결",
   description: "루틴, 할 일, 언젠가 할 일을 한 결로 정리하는 개인 시간관리",
+  // iOS ignores the web manifest for "홈 화면에 추가" and reads these instead,
+  // so the two have to agree — app/manifest.ts is not enough on an iPhone.
+  appleWebApp: {
+    capable: true,
+    title: "주간결",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  // Tints the phone's status bar to match the page rather than leaving a white
+  // strip above a sand background. Two values so a dark-mode phone gets the
+  // dark page colour instead of the light one.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f1f0ef" },
+    { media: "(prefers-color-scheme: dark)", color: "#111110" },
+  ],
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

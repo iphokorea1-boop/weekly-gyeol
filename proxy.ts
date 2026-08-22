@@ -25,5 +25,16 @@ export function proxy(request: NextRequest) {
 export const config = {
   // API routes are excluded so unauthenticated calls get a 401 JSON body from
   // the handler instead of an HTML redirect a fetch() cannot make sense of.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\.(?:png|svg|ico)$).*)"],
+  //
+  // The manifest is excluded because the browser fetches it *without* cookies.
+  // Redirecting it to /login makes the site look uninstallable — no home-screen
+  // prompt — and nothing reports an error, so it quietly never works. It holds
+  // no user data. The generated icons need no entry of their own: Next serves
+  // them at /icon.png and /apple-icon.png, which the extension rule below
+  // already covers. Keep it that way rather than excluding the bare words —
+  // "icon" here would be a prefix match, and would let a future /icons page
+  // past the gate.
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\.(?:png|svg|ico)$).*)",
+  ],
 };
