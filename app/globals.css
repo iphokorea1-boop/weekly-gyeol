@@ -201,9 +201,11 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
 
-  --font-sans: var(--font-geist-sans), -apple-system, "Apple SD Gothic Neo",
+  /* One family for both scripts. The OS Korean fonts stay behind it only as a
+     fallback for the moment before the webfont lands. */
+  --font-sans: var(--font-noto-sans-kr), -apple-system, "Apple SD Gothic Neo",
     "Malgun Gothic", system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: ui-monospace, monospace;
 
   /*
    * Two curves carry the whole interface.

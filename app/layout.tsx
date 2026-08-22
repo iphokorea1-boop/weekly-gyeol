@@ -1,20 +1,29 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Noto_Sans_KR } from "next/font/google";
 import Nav from "@/app/components/nav";
 import { QuickAddProvider } from "@/app/components/quick-add";
 import { ShortcutsProvider } from "@/app/components/shortcuts";
 import { getCurrentUser } from "@/lib/dal";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Hangul is most of what this app renders, and Geist has no Hangul at all — it
+// fell through to whatever the OS supplied, so the same screen looked different
+// on Windows and on a Mac. Noto Sans KR draws both scripts, so the digits in a
+// time label and the words beside them finally match.
+//
+// `subsets` does not filter what gets downloaded: every unicode-range chunk in
+// the Google stylesheet is self-hosted either way. It only picks which chunks
+// get a <link rel=preload>. Naming only "latin" is deliberate — preloading the
+// ~120 Hangul chunks would flood the head, and the browser fetches the handful
+// a page actually needs on its own.
+const notoSansKr = Noto_Sans_KR({
+  variable: "--font-noto-sans-kr",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Geist Mono used to be loaded here too. Nothing ever rendered with it — the
+// --font-mono token it fed is unreferenced — but preloading pulled the file down
+// on every page anyway. --font-mono now names the platform's own mono face.
 
 export const metadata: Metadata = {
   title: "주간결",
@@ -29,7 +38,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${notoSansKr.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {/* Both wrap the whole app rather than each board: the add form is now
