@@ -21,11 +21,17 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    // Matches --background and --foreground in globals.css. background_color
-    // paints the splash screen while the app boots; getting it wrong shows a
-    // white flash before a sand-coloured page.
+    // Both match --background in globals.css, and the light value in the root
+    // layout's viewport.themeColor. background_color paints the splash screen
+    // while the app boots; getting it wrong shows a white flash before a
+    // sand-coloured page.
+    //
+    // theme_color used to be the near-black --foreground, which is what a
+    // Windows install composited the transparent icon onto — the app arrived in
+    // the taskbar as a black tile with the mark floating in it. It tints
+    // chrome, not text, so it belongs with the page colour rather than the ink.
     background_color: "#f1f0ef",
-    theme_color: "#21201c",
+    theme_color: "#f1f0ef",
     categories: ["productivity"],
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
