@@ -15,7 +15,16 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  const dateOnly = toDateOnly(body.date ? new Date(body.date) : new Date());
+
+  // An absent date means today. A present but unparseable one is a mistake
+  // worth reporting: `new Date("아무거나")` is Invalid Date, and normalising
+  // that produces a value Prisma rejects with a 500 rather than a 400.
+  const raw = (body as { date?: unknown }).date;
+  const occurrence = raw === undefined || raw === null ? new Date() : new Date(raw as string);
+  if (Number.isNaN(occurrence.getTime())) {
+    return NextResponse.json({ error: "날짜 형식이 올바르지 않습니다" }, { status: 400 });
+  }
+  const dateOnly = toDateOnly(occurrence);
 
   // TaskCompletion has no owner of its own, so ownership is checked on the
   // parent task before anything is written.

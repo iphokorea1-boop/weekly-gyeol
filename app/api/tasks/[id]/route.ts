@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/dal";
-import { toDateOnly } from "@/lib/task-utils";
+import { parseTaskInput, readJson } from "@/lib/task-input";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -10,26 +10,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const body = await req.json();
-  const { title, memo, dueDate, startTime, endTime, weekdays, priority, archived } = body;
+
+  // Only the keys the client actually sent come back, so "leave this alone"
+  // stays distinguishable from "clear it" — the spread below depends on it.
+  const parsed = parseTaskInput(await readJson(req), "update");
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
 
   // updateMany rather than update: it takes a non-unique filter, so ownership
   // is enforced inside the same statement. `update({ where: { id } })` would
   // happily edit another account's task for anyone who guessed an id.
   const result = await prisma.task.updateMany({
     where: { id, userId: user.id },
-    data: {
-      ...(title !== undefined ? { title } : {}),
-      ...(memo !== undefined ? { memo } : {}),
-      ...(dueDate !== undefined
-        ? { dueDate: dueDate ? toDateOnly(new Date(dueDate)) : null }
-        : {}),
-      ...(startTime !== undefined ? { startTime } : {}),
-      ...(endTime !== undefined ? { endTime } : {}),
-      ...(weekdays !== undefined ? { weekdays } : {}),
-      ...(priority !== undefined ? { priority } : {}),
-      ...(archived !== undefined ? { archived } : {}),
-    },
+    data: parsed.fields,
   });
 
   // Same response whether the task is missing or simply not theirs, so the API
