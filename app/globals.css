@@ -435,6 +435,59 @@
   animation: complete-sweep 620ms var(--ease-smooth) forwards;
 }
 
+/* ---------------------------------------------------------------------------
+ * The placing gesture, on the landing page
+ *
+ * One chip leaves the 미배치함 and settles into Wednesday, turning from the
+ * dashed teal of an undated item into the solid indigo of a dated one. It is
+ * the whole product in about three seconds, which is why the page leads with it
+ * rather than with a screenshot.
+ *
+ * The element's *resting* classes are already the placed state — solid indigo,
+ * untranslated — and the animation reaches back to the backlog rather than
+ * forward from it. That ordering is what makes the reduced-motion rule below a
+ * one-liner: drop the animation and the settled state is simply what is left,
+ * with nothing stranded mid-flight.
+ */
+@keyframes place {
+  0% {
+    translate: 0 var(--place-drop);
+    opacity: 0;
+    border-style: dashed;
+    border-color: var(--floating-line);
+    background: var(--floating-soft);
+    color: var(--floating-ink);
+  }
+  6%,
+  20% {
+    translate: 0 var(--place-drop);
+    opacity: 1;
+    border-style: dashed;
+    border-color: var(--floating-line);
+    background: var(--floating-soft);
+    color: var(--floating-ink);
+  }
+  46%,
+  90% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  97%,
+  100% {
+    translate: 0 0;
+    opacity: 0;
+  }
+}
+
+/* The gap between the chip's slot and the 미배치함 row it waits in: the rest of
+   the day column (128 - 4), the rule and its margins (16 + 1 + 16), and the
+   heading above the strip (~26). A constant rather than a viewport formula
+   because the board it lives in holds a fixed inner width and scrolls. */
+.animate-place {
+  --place-drop: 183.5px;
+  animation: place 7s var(--ease-smooth) infinite;
+}
+
 /* The nav indicator slides between tabs rather than cutting, so the eye can
    follow which section it moved to. */
 .nav-pill {
@@ -517,6 +570,7 @@
   .animate-panel-in,
   .animate-item-in,
   .animate-complete-sweep,
+  .animate-place,
   .check-draw path {
     animation: none;
   }

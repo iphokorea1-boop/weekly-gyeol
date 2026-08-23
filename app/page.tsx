@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/dal";
+import { getCurrentUser } from "@/lib/dal";
 import {
   capacityPercent,
   formatKo,
@@ -16,6 +16,7 @@ import TaskItem, { type TaskItemData } from "@/app/components/task-item";
 import AddTaskForm from "@/app/components/add-task-form";
 import KindLegend from "@/app/components/kind-legend";
 import StreakCard from "@/app/components/streak-card";
+import Landing from "@/app/components/landing";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,21 @@ function SectionHeading({ title, count }: { title: string; count: number }) {
   );
 }
 
+/**
+ * Two pages behind one address.
+ *
+ * A stranger gets the pitch; the owner gets today's board. They share a URL
+ * because that URL is the one that gets pasted into a message — sending someone
+ * to a login screen to explain what the app is has never worked, and a separate
+ * /about that nobody links to works no better.
+ *
+ * `getCurrentUser` rather than `requireUser`: this is the one route that must
+ * render something for a visitor with no session instead of redirecting. The
+ * matching exemption lives in proxy.ts, and neither half works alone.
+ */
 export default async function Home() {
-  const user = await requireUser();
+  const user = await getCurrentUser();
+  if (!user) return <Landing />;
 
   const tasks = await prisma.task.findMany({
     where: { archived: false, userId: user.id },

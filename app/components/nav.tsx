@@ -62,10 +62,19 @@ export default function Nav({ user }: { user: CurrentUser | null }) {
   );
 
   if (!user) {
+    // Signed out, the bar sits above the landing page rather than the app, so it
+    // carries the one action that page is asking for. The tabs stay away: they
+    // would all lead to the login screen.
     return (
       <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           {wordmark}
+          <Link
+            href="/login"
+            className="pressable lift rounded-full border border-border bg-surface px-4 py-1.5 text-[13px] font-semibold hover:border-dated hover:text-dated-ink"
+          >
+            시작하기
+          </Link>
         </div>
       </header>
     );

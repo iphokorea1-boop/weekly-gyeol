@@ -28,6 +28,11 @@ const notoSansKr = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: "주간결",
   description: "루틴, 할 일, 언젠가 할 일을 한 결로 정리하는 개인 시간관리",
+  // No `robots` block: the app is meant to be found now. What may be crawled is
+  // said once, in app/robots.ts, rather than half here and half there. The one
+  // page that must stay out of an index — the unsubscribe link, which carries a
+  // token — sends its own `noindex` from the route that renders it.
+  //
   // iOS ignores the web manifest for "홈 화면에 추가" and reads these instead,
   // so the two have to agree — app/manifest.ts is not enough on an iPhone.
   appleWebApp: {
