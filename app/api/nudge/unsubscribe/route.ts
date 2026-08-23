@@ -47,6 +47,22 @@ const BUTTON =
   "display:inline-block;border:0;background:#3e63dd;color:#fff;font-size:14px;font-weight:700;padding:11px 20px;border-radius:8px;cursor:pointer";
 const LINK = "color:#63635e;font-size:12px";
 
+/**
+ * The id and token below reach the page as query parameters. Today neither can
+ * carry anything dangerous — the token is only echoed after it has matched an
+ * HMAC, and the id came back out of the database — but that is an invariant
+ * held together by the order of two functions, not by the markup. Escaping on
+ * the way out means a future change to `authenticate` cannot quietly turn this
+ * into the one injectable page in the app.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 type Kind = "nudge" | "digest";
 
 const COPY: Record<Kind, { name: string; on: string; off: string }> = {
@@ -107,13 +123,13 @@ export async function GET(request: NextRequest) {
       ${off ? `다시 켜면 ${auth.copy.on}` : auth.copy.off}
     </p>
     <form method="post">
-      <input type="hidden" name="u" value="${auth.id}">
-      <input type="hidden" name="t" value="${auth.token}">
-      <input type="hidden" name="k" value="${auth.kind}">
+      <input type="hidden" name="u" value="${escapeHtml(auth.id)}">
+      <input type="hidden" name="t" value="${escapeHtml(auth.token)}">
+      <input type="hidden" name="k" value="${escapeHtml(auth.kind)}">
       <input type="hidden" name="action" value="${off ? "on" : "off"}">
       <button type="submit" style="${BUTTON}">${off ? "다시 받기" : "그만 받기"}</button>
     </form>
-    <p style="margin:20px 0 0"><a href="${appUrl()}" style="${LINK}">주간결 열기</a></p>
+    <p style="margin:20px 0 0"><a href="${escapeHtml(appUrl())}" style="${LINK}">주간결 열기</a></p>
   `);
 }
 
@@ -142,12 +158,12 @@ export async function POST(request: NextRequest) {
       }
     </p>
     <form method="post">
-      <input type="hidden" name="u" value="${auth.id}">
-      <input type="hidden" name="t" value="${auth.token}">
-      <input type="hidden" name="k" value="${auth.kind}">
+      <input type="hidden" name="u" value="${escapeHtml(auth.id)}">
+      <input type="hidden" name="t" value="${escapeHtml(auth.token)}">
+      <input type="hidden" name="k" value="${escapeHtml(auth.kind)}">
       <input type="hidden" name="action" value="${enable ? "off" : "on"}">
       <button type="submit" style="${BUTTON}">${enable ? "역시 그만 받기" : "다시 받기"}</button>
     </form>
-    <p style="margin:20px 0 0"><a href="${appUrl()}" style="${LINK}">주간결 열기</a></p>
+    <p style="margin:20px 0 0"><a href="${escapeHtml(appUrl())}" style="${LINK}">주간결 열기</a></p>
   `);
 }
