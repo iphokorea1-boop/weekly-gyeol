@@ -8,6 +8,15 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/auth";
+import {
+  accountKey,
+  addressKey,
+  checkLimit,
+  clearStrikes,
+  recordStrike,
+  signupKey,
+  waitLabel,
+} from "@/lib/throttle";
 
 export type AuthState = { error?: string } | undefined;
 
@@ -25,12 +34,25 @@ function readCredentials(formData: FormData) {
   };
 }
 
+/** Shown when a throttle fires. Never says which limit was hit. */
+function tooMany(retryAfterSec: number): AuthState {
+  return {
+    error: `시도가 너무 잦아요. ${waitLabel(retryAfterSec)} 뒤에 다시 해주세요.`,
+  };
+}
+
 export async function signup(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
   const { email, password } = readCredentials(formData);
   const name = String(formData.get("name") ?? "").trim() || null;
+
+  // Counted per address, and only on accounts actually created — a rejected
+  // form is a mistake, not an attempt to fill the database with accounts.
+  const keys = [await signupKey()];
+  const gate = await checkLimit(keys);
+  if (!gate.ok) return tooMany(gate.retryAfterSec);
 
   if (!EMAIL_RE.test(email)) return { error: "이메일 형식이 올바르지 않아요." };
   if (password.length < MIN_PASSWORD) {
@@ -61,6 +83,7 @@ export async function signup(
     return created;
   });
 
+  await recordStrike(keys);
   await createSession(user.id);
   redirect("/");
 }
@@ -70,6 +93,14 @@ export async function login(
   formData: FormData
 ): Promise<AuthState> {
   const { email, password } = readCredentials(formData);
+
+  // Two counters, and either can refuse: the account, against someone working
+  // on one password, and the address, against someone spraying one password
+  // across many accounts. Checked before the row is even looked up, so a locked
+  // key costs an attacker a query and no scrypt at all.
+  const keys = [accountKey(email), await addressKey()];
+  const gate = await checkLimit(keys);
+  if (!gate.ok) return tooMany(gate.retryAfterSec);
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -83,10 +114,17 @@ export async function login(
     // Still spend the hashing time, so response latency doesn't reveal whether
     // the address exists.
     await hashPassword(password);
+    await recordStrike(keys);
     return failed;
   }
-  if (!(await verifyPassword(password, user.passwordHash))) return failed;
+  if (!(await verifyPassword(password, user.passwordHash))) {
+    await recordStrike(keys);
+    return failed;
+  }
 
+  // Proving you own the account clears its slate. The address counter goes with
+  // it: whoever is at that address has just shown they belong here.
+  await clearStrikes(keys);
   await createSession(user.id);
   redirect("/");
 }

@@ -50,6 +50,27 @@ model Session {
   @@index([userId])
 }
 
+// Counted attempts at the two forms a stranger can reach: signing in, and
+// signing up. scrypt makes one guess expensive; this is what makes a million
+// guesses impossible, which hashing alone cannot do.
+//
+// `key` is a SHA-256 digest, never the email or address it stands for. Left
+// readable, this table would become a log of who has been trying to sign in to
+// which account — the same reasoning that stores only a digest of a session
+// token two models up.
+model AuthThrottle {
+  key         String    @id
+  strikes     Int       @default(0)
+  // When the current counting window opened. A window that has run its course
+  // starts over, so an old typo is not held against anyone forever.
+  windowStart DateTime  @default(now())
+  // Null until the strikes cross the threshold for this key.
+  lockedUntil DateTime?
+
+  // For the daily sweep, which deletes rows whose window has long since closed.
+  @@index([windowStart])
+}
+
 // A single Task row covers all three kinds shown in the weekly view:
 // - dueDate set, weekdays null  -> dated task
 // - weekdays set                -> recurring routine (dueDate ignored)
