@@ -26,6 +26,18 @@ function sender(): string {
   return process.env.MAIL_FROM ?? "주간결 <onboarding@resend.dev>";
 }
 
+/**
+ * An address a reader can actually write back to, when there is one.
+ *
+ * Deliverability is mostly about the sending domain, but a From nobody can
+ * reply to is one of the smaller things filters count against a sender. Left
+ * unset the header is simply omitted — an absent Reply-To is neutral, a broken
+ * one is worse than none.
+ */
+function replyTo(): string | undefined {
+  return process.env.MAIL_REPLY_TO || undefined;
+}
+
 export function mailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
@@ -35,6 +47,19 @@ export async function sendMail(message: {
   subject: string;
   html: string;
   text: string;
+  /**
+   * Extra headers, which in practice means List-Unsubscribe. Putting the
+   * opt-out in a header as well as in the body is what lets Gmail draw its own
+   * unsubscribe control beside the sender name, and a sender whose readers
+   * leave that way instead of pressing "신고" keeps a much better reputation.
+   *
+   * Deliberately no `List-Unsubscribe-Post: List-Unsubscribe=One-Click`: that
+   * invites the mail provider to POST the link with no confirmation, and the
+   * unsubscribe route is built the other way round on purpose — a GET only
+   * offers the change, a POST behind a button makes it. Header-only keeps the
+   * reputation gain without contradicting that.
+   */
+  headers?: Record<string, string>;
 }): Promise<MailResult> {
   const key = process.env.RESEND_API_KEY;
   // Not an error: the feature is meant to be deployable before the key exists,
@@ -54,6 +79,8 @@ export async function sendMail(message: {
         subject: message.subject,
         html: message.html,
         text: message.text,
+        ...(replyTo() ? { reply_to: replyTo() } : {}),
+        ...(message.headers ? { headers: message.headers } : {}),
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

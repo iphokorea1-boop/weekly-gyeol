@@ -10,6 +10,7 @@ import {
   unsubscribeToken,
 } from "@/lib/nudge";
 import { computeStreaks } from "@/lib/gamification";
+import { sweepThrottles } from "@/lib/throttle";
 import { isSameDay, toDateOnly, todayInSeoul } from "@/lib/task-utils";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,10 @@ export async function GET(request: NextRequest) {
   const today = todayInSeoul();
   const afterDays = nudgeAfterDays();
   const base = appUrl();
+
+  // Unrelated to nudging, but this job is already awake once a day and the
+  // rate-limit counters need someone to take out the rubbish.
+  const sweptThrottles = await sweepThrottles(now);
 
   const accounts = await prisma.user.findMany({
     select: {
@@ -95,6 +100,8 @@ export async function GET(request: NextRequest) {
     const { current, longest } = computeStreaks(tasks, today);
     const token = unsubscribeToken(account.id, account.passwordHash);
 
+    const unsubscribeUrl = `${base}/api/nudge/unsubscribe?u=${account.id}&t=${token}`;
+
     const mail = buildNudgeEmail({
       name: account.name,
       quiet: decision.quiet,
@@ -104,10 +111,16 @@ export async function GET(request: NextRequest) {
       streak: current,
       longest,
       appUrl: base,
-      unsubscribeUrl: `${base}/api/nudge/unsubscribe?u=${account.id}&t=${token}`,
+      unsubscribeUrl,
     });
 
-    const sent = await sendMail({ to: account.email, ...mail });
+    const sent = await sendMail({
+      to: account.email,
+      ...mail,
+      // The same link the footer carries, raised into a header so the mail
+      // client can offer it too. See lib/mailer.ts for why One-Click is left off.
+      headers: { "List-Unsubscribe": `<${unsubscribeUrl}>` },
+    });
     // lastNudgeAt is only advanced on a real send, so a provider outage means
     // the account is tried again tomorrow rather than silently skipped for the
     // whole cooldown.
@@ -129,6 +142,7 @@ export async function GET(request: NextRequest) {
     ranAt: now.toISOString(),
     afterDays,
     checked: accounts.length,
+    sweptThrottles,
     results,
   });
 }

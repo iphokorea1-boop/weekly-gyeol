@@ -142,7 +142,13 @@ export async function GET(request: NextRequest) {
     }
 
     const mail = buildDigestEmail(content);
-    const sent = await sendMail({ to: account.email, ...mail });
+    const sent = await sendMail({
+      to: account.email,
+      ...mail,
+      // The same link the footer carries, raised into a header so the mail
+      // client can offer it too. See lib/mailer.ts for why One-Click is left off.
+      headers: { "List-Unsubscribe": `<${content.unsubscribeUrl}>` },
+    });
 
     results.push({
       account: mask(account.email),
