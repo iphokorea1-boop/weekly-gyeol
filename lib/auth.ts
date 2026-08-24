@@ -95,3 +95,19 @@ export async function destroySession(): Promise<void> {
   }
   jar.delete(SESSION_COOKIE);
 }
+
+/**
+ * Drops sessions whose expiry has passed.
+ *
+ * Nothing here is a security fix — `getCurrentUser` already refuses an expired
+ * row, and the rows hold a digest rather than a usable token. They are simply
+ * never read again and were never deleted, so the table only grew: thirty days
+ * after every sign-in on every device, forever. Called from the daily cron,
+ * which is already awake and already sweeping the throttle counters.
+ */
+export async function sweepSessions(now: Date = new Date()): Promise<number> {
+  const { count } = await prisma.session.deleteMany({
+    where: { expiresAt: { lt: now } },
+  });
+  return count;
+}

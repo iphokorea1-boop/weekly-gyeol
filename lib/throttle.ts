@@ -31,6 +31,15 @@ const ACCOUNT_STRIKES = 5;
 const ADDRESS_STRIKES = 30;
 /** Accounts one address may create per window. */
 const SIGNUP_STRIKES = 5;
+/**
+ * Wrong invite codes one address may try per window.
+ *
+ * Looser than the account limit because a code is copied out of a message and
+ * mistyped honestly, and tighter than the address limit because — unlike a
+ * password — there is no legitimate reason for one address to work through
+ * many of them.
+ */
+const INVITE_STRIKES = 10;
 
 /**
  * The lock doubles with every strike past the threshold, from a minute up to an
@@ -84,6 +93,22 @@ export async function signupKey(): Promise<ThrottleKey> {
   return {
     id: digest(`signup:${await clientAddress()}`),
     threshold: SIGNUP_STRIKES,
+  };
+}
+
+/**
+ * Wrong invite codes, counted apart from accounts created.
+ *
+ * Without this the codes would be free to guess. `signupKey` only records a
+ * strike once an account actually exists, so a refused form costs an attacker
+ * nothing and the whole list could be worked through at the speed of the
+ * network — which would make the invite gate look like a lock and behave like
+ * a sign.
+ */
+export async function inviteKey(): Promise<ThrottleKey> {
+  return {
+    id: digest(`invite:${await clientAddress()}`),
+    threshold: INVITE_STRIKES,
   };
 }
 

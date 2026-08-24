@@ -3,6 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/dal";
 import { parseTaskInput, readJson } from "@/lib/task-input";
 
+/**
+ * Rows one account may hold, archived ones included.
+ *
+ * task-input.ts caps how big a single task can be; nothing capped how many of
+ * them there could be. Someone using this every day for years does not come
+ * near a thousand — a loop pointed at this endpoint reaches it in seconds, and
+ * the database is one free-tier instance shared by every account, so one
+ * account filling it is an outage for all of them.
+ */
+const TASK_LIMIT = 1000;
+
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -22,6 +33,18 @@ export async function POST(req: NextRequest) {
   const parsed = parseTaskInput(await readJson(req), "create");
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
+  }
+
+  // Counted after the body is checked, so a malformed request still gets the
+  // reason it was malformed rather than a quota message that explains nothing.
+  const held = await prisma.task.count({ where: { userId: user.id } });
+  if (held >= TASK_LIMIT) {
+    return NextResponse.json(
+      {
+        error: `할 일은 계정당 ${TASK_LIMIT}개까지예요. 오래된 항목을 지우고 다시 시도해 주세요.`,
+      },
+      { status: 403 }
+    );
   }
 
   const task = await prisma.task.create({

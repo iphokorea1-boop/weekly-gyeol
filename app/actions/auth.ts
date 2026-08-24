@@ -13,14 +13,16 @@ import {
   addressKey,
   checkLimit,
   clearStrikes,
+  inviteKey,
   recordStrike,
   signupKey,
   waitLabel,
 } from "@/lib/throttle";
+import { inviteAccepted, invitesConfigured } from "@/lib/invite";
+import { passwordProblem } from "@/lib/password";
 
 export type AuthState = { error?: string } | undefined;
 
-const MIN_PASSWORD = 8;
 // Deliberately loose. Anything stricter mostly rejects addresses that are in
 // fact valid; the real check is whether the person can use it to sign in.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,17 +49,30 @@ export async function signup(
 ): Promise<AuthState> {
   const { email, password } = readCredentials(formData);
   const name = String(formData.get("name") ?? "").trim() || null;
+  const invite = String(formData.get("invite") ?? "");
 
-  // Counted per address, and only on accounts actually created — a rejected
-  // form is a mistake, not an attempt to fill the database with accounts.
-  const keys = [await signupKey()];
-  const gate = await checkLimit(keys);
+  // Two counters, and each measures something the other cannot. Accounts are
+  // counted only when one is actually created — a rejected form is a mistake,
+  // not an attempt to fill the database. Wrong codes are counted on every
+  // refusal, because a refused guess is exactly what has to become expensive.
+  const accounts = await signupKey();
+  const guesses = await inviteKey();
+  const gate = await checkLimit([accounts, guesses]);
   if (!gate.ok) return tooMany(gate.retryAfterSec);
 
-  if (!EMAIL_RE.test(email)) return { error: "이메일 형식이 올바르지 않아요." };
-  if (password.length < MIN_PASSWORD) {
-    return { error: `비밀번호는 ${MIN_PASSWORD}자 이상이어야 해요.` };
+  // Before anything is looked up or hashed: nobody without a code gets to find
+  // out whether an address is registered, or to spend the server's scrypt time.
+  if (!invitesConfigured()) {
+    return { error: "지금은 새로 가입할 수 없어요." };
   }
+  if (!inviteAccepted(invite)) {
+    await recordStrike([guesses]);
+    return { error: "초대 코드가 올바르지 않아요." };
+  }
+
+  if (!EMAIL_RE.test(email)) return { error: "이메일 형식이 올바르지 않아요." };
+  const weak = passwordProblem(password, email);
+  if (weak) return { error: weak };
 
   if (await prisma.user.findUnique({ where: { email }, select: { id: true } })) {
     return { error: "이미 가입된 이메일이에요." };
@@ -83,7 +98,7 @@ export async function signup(
     return created;
   });
 
-  await recordStrike(keys);
+  await recordStrike([accounts]);
   await createSession(user.id);
   redirect("/");
 }

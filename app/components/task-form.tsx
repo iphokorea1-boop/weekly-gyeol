@@ -75,6 +75,7 @@ export default function TaskForm({
   const [endTime, setEndTime] = useState(draft.endTime);
   const [weekdays, setWeekdays] = useState<number[]>(draft.weekdays);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleWeekday(v: number) {
     setWeekdays((prev) =>
@@ -86,8 +87,14 @@ export default function TaskForm({
     e.preventDefault();
     if (!title.trim()) return;
     setSubmitting(true);
+    setError(null);
 
-    await fetch("/api/tasks", {
+    // The response used to be discarded: the panel closed and the list
+    // refreshed whatever came back, so a refusal looked exactly like a task
+    // that had been saved and then vanished. Every reason the route gives is
+    // one a person can act on — too long, malformed, or the account's limit —
+    // so the panel now stays open and says which.
+    const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -97,9 +104,21 @@ export default function TaskForm({
         startTime: startTime || null,
         endTime: endTime || null,
       }),
-    });
+    }).catch(() => null);
 
     setSubmitting(false);
+
+    if (!res?.ok) {
+      const reason = res
+        ? await res
+            .json()
+            .then((body: { error?: string }) => body.error)
+            .catch(() => null)
+        : null;
+      setError(reason ?? "저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+      return;
+    }
+
     onClose();
     router.refresh();
   }
@@ -119,6 +138,15 @@ export default function TaskForm({
         placeholder="무엇을 해야 하나요?"
         className={cn(inputClass, "text-[15px] font-medium")}
       />
+
+      {error && (
+        <p
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3 py-2 text-[13px] font-medium text-destructive"
+        >
+          {error}
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-1.5">
         {KINDS.map((value) => {

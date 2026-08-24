@@ -11,6 +11,7 @@ import {
 } from "@/lib/nudge";
 import { computeStreaks } from "@/lib/gamification";
 import { sweepThrottles } from "@/lib/throttle";
+import { sweepSessions } from "@/lib/auth";
 import { isSameDay, toDateOnly, todayInSeoul } from "@/lib/task-utils";
 
 export const dynamic = "force-dynamic";
@@ -53,9 +54,14 @@ export async function GET(request: NextRequest) {
   const afterDays = nudgeAfterDays();
   const base = appUrl();
 
-  // Unrelated to nudging, but this job is already awake once a day and the
-  // rate-limit counters need someone to take out the rubbish.
-  const sweptThrottles = await sweepThrottles(now);
+  // Unrelated to nudging, but this job is already awake once a day and both of
+  // these tables need someone to take out the rubbish. Expired sessions are
+  // refused on sight by the data access layer and then left where they are, so
+  // without this the table grows by one row per sign-in and never shrinks.
+  const [sweptThrottles, sweptSessions] = await Promise.all([
+    sweepThrottles(now),
+    sweepSessions(now),
+  ]);
 
   const accounts = await prisma.user.findMany({
     select: {
@@ -143,6 +149,7 @@ export async function GET(request: NextRequest) {
     afterDays,
     checked: accounts.length,
     sweptThrottles,
+    sweptSessions,
     results,
   });
 }
