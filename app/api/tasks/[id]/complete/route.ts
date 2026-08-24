@@ -5,10 +5,24 @@ import { toDateOnly } from "@/lib/task-utils";
 
 type Params = { params: Promise<{ id: string }> };
 
-// Toggles completion for a given occurrence date (defaults to today).
-// The instant is resolved to a Seoul calendar day, not the server's own — the
-// server runs in UTC, so a tick at 01:00 KST would otherwise be filed under
-// yesterday and never line up with the day the user was looking at.
+/** Prisma's code for a violated unique constraint. */
+const UNIQUE_VIOLATION = "P2002";
+
+/**
+ * Records — or clears — a completion for a given occurrence date.
+ *
+ * The instant is resolved to a Seoul calendar day rather than the server's own:
+ * the server runs in UTC, so a tick at 01:00 KST would otherwise be filed under
+ * yesterday and never line up with the day the person was looking at.
+ *
+ * `completed` says which state the caller wants; without it the route falls
+ * back to flipping whatever it finds, which is what older clients send. The
+ * difference matters under a slow connection. Read-then-write meant two taps
+ * arriving before the first write landed both saw "not completed": one created
+ * the row, the other hit the unique constraint and returned a 500, leaving the
+ * screen and the database disagreeing. Told the intended state, each request is
+ * idempotent, the later one wins, and a repeat is not an error.
+ */
 export async function POST(req: NextRequest, { params }: Params) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -34,15 +48,49 @@ export async function POST(req: NextRequest, { params }: Params) {
   });
   if (!owned) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const existing = await prisma.taskCompletion.findUnique({
-    where: { taskId_date: { taskId: id, date: dateOnly } },
-  });
+  const wanted = (body as { completed?: unknown }).completed;
+  if (wanted !== undefined && typeof wanted !== "boolean") {
+    return NextResponse.json(
+      { error: "completed는 true 또는 false여야 합니다" },
+      { status: 400 }
+    );
+  }
 
-  if (existing) {
-    await prisma.taskCompletion.delete({ where: { id: existing.id } });
+  // deleteMany rather than find-then-delete: it takes the same filter and
+  // reports how many rows it removed, so one statement both clears the
+  // completion and answers whether there was one. That count is what makes the
+  // fallback toggle below safe to run twice.
+  const clear = async () =>
+    (await prisma.taskCompletion.deleteMany({
+      where: { taskId: id, date: dateOnly },
+    })).count;
+
+  if (wanted === false) {
+    await clear();
     return NextResponse.json({ completed: false });
   }
 
-  await prisma.taskCompletion.create({ data: { taskId: id, date: dateOnly } });
+  if (wanted === true) {
+    try {
+      await prisma.taskCompletion.create({ data: { taskId: id, date: dateOnly } });
+    } catch (error) {
+      // Someone else's request got there first. That is the state being asked
+      // for, so it is an answer rather than a failure.
+      const code = (error as { code?: string }).code;
+      if (code !== UNIQUE_VIOLATION) throw error;
+    }
+    return NextResponse.json({ completed: true });
+  }
+
+  // No stated intent: flip whatever is there. Still two statements, but the
+  // first one is the delete, so a concurrent pair cannot both reach the create.
+  if ((await clear()) > 0) return NextResponse.json({ completed: false });
+
+  try {
+    await prisma.taskCompletion.create({ data: { taskId: id, date: dateOnly } });
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code !== UNIQUE_VIOLATION) throw error;
+  }
   return NextResponse.json({ completed: true });
 }

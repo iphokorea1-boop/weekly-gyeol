@@ -396,6 +396,26 @@
   }
 }
 
+/*
+ * Leaving a list. A completed row plays this once its celebration is over and
+ * before it reappears under 완료. Without it the row would disappear on a
+ * single frame, which reads as having deleted something rather than moved it.
+ * Starts at the opacity a done row already sits at, so the fade continues from
+ * where the row was rather than flashing back to full strength first.
+ */
+@keyframes item-out {
+  from {
+    opacity: 0.6;
+    translate: 0 0;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    translate: 0 -6px;
+    scale: 0.97;
+  }
+}
+
 @keyframes panel-in {
   from {
     opacity: 0;
@@ -429,6 +449,14 @@
    its turn stays invisible instead of flashing in and then animating. */
 .animate-item-in {
   animation: item-in 400ms var(--ease-smooth) backwards;
+}
+
+/* `forwards` so the row stays gone for the frame between the animation ending
+   and React unmounting it. Untappable on the way out: the checkbox is still
+   under the finger, and a second tap would fight the move already booked. */
+.animate-item-out {
+  animation: item-out 160ms var(--ease-smooth) forwards;
+  pointer-events: none;
 }
 
 .animate-complete-sweep {
@@ -569,6 +597,7 @@
   .animate-ring-pulse,
   .animate-panel-in,
   .animate-item-in,
+  .animate-item-out,
   .animate-complete-sweep,
   .animate-place,
   .check-draw path {

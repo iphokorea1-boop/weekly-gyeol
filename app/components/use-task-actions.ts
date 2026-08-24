@@ -59,10 +59,15 @@ export function useTaskActions(taskId: string, serverDone = false) {
       }
     }
 
+    // The state being asked for, not "flip it". Two taps in quick succession
+    // used to arrive as two flips, and on a slow connection both read the row
+    // as not yet completed — one wrote it, the other collided with the unique
+    // constraint. Sending the intended value makes each request idempotent and
+    // lets the later one win.
     const res = await fetch(`/api/tasks/${taskId}/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: date.toISOString() }),
+      body: JSON.stringify({ date: date.toISOString(), completed: next }),
     });
     const result = await res.json().catch(() => null);
 

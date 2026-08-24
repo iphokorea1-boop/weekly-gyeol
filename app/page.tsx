@@ -12,7 +12,8 @@ import {
 } from "@/lib/task-utils";
 import { holidayLabel, holidaysOn } from "@/lib/holidays";
 import { computeStreaks, totalXp, xpFor } from "@/lib/gamification";
-import TaskItem, { type TaskItemData } from "@/app/components/task-item";
+import { type TaskItemData } from "@/app/components/task-item";
+import TodayBoard from "@/app/components/today-board";
 import AddTaskForm from "@/app/components/add-task-form";
 import KindLegend from "@/app/components/kind-legend";
 import StreakCard from "@/app/components/streak-card";
@@ -22,19 +23,6 @@ export const dynamic = "force-dynamic";
 
 function formatToday(d: Date) {
   return formatKo(d, { month: "long", day: "numeric", weekday: "long" });
-}
-
-function SectionHeading({ title, count }: { title: string; count: number }) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <h2 className="text-xs font-bold tracking-wide text-ink-faint">{title}</h2>
-      {count > 0 && (
-        <span className="text-xs font-semibold tabular-nums text-ink-faint/80">
-          {count}
-        </span>
-      )}
-    </div>
-  );
 }
 
 /**
@@ -155,57 +143,14 @@ export default async function Home() {
         todayTotal={scheduled.length}
       />
 
-      <section className="flex flex-col gap-2">
-        <SectionHeading title="오늘 할 일" count={dated.length} />
-        <div className="flex flex-col gap-1.5">
-          {dated.length === 0 && (
-            <p className="rounded-lg border border-dashed border-border px-3 py-3 text-sm text-ink-faint">
-              오늘 예정된 할 일이 없어요.
-            </p>
-          )}
-          {dated.map((t, i) => (
-            <TaskItem key={t.id} kind="dated" task={toDatedItem(t)} index={i} />
-          ))}
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <SectionHeading title="정기 루틴" count={routines.length} />
-        <div className="flex flex-col gap-1.5">
-          {routines.length === 0 && (
-            <p className="rounded-lg border border-dashed border-border px-3 py-3 text-sm text-ink-faint">
-              오늘 해당하는 루틴이 없어요.
-            </p>
-          )}
-          {routines.map((t, i) => (
-            <TaskItem
-              key={t.id}
-              kind="routine"
-              task={toRoutineItem(t)}
-              index={i}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <SectionHeading title="미배치함 · 언젠가 할 일" count={floating.length} />
-        <div className="flex flex-wrap gap-1.5">
-          {floating.length === 0 && (
-            <p className="w-full rounded-lg border border-dashed border-border px-3 py-3 text-sm text-ink-faint">
-              쌓아둔 할 일이 없어요.
-            </p>
-          )}
-          {floating.map((t, i) => (
-            <TaskItem
-              key={t.id}
-              kind="floating"
-              task={toFloatingItem(t)}
-              index={i}
-            />
-          ))}
-        </div>
-      </section>
+      {/* The three lists and the finished pile are one component: checking a
+          row moves it between them, and that has to happen on the tap rather
+          than on the next server render. */}
+      <TodayBoard
+        dated={dated.map(toDatedItem)}
+        routines={routines.map(toRoutineItem)}
+        floating={floating.map(toFloatingItem)}
+      />
 
       <section>
         <AddTaskForm />

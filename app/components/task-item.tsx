@@ -32,12 +32,26 @@ export default function TaskItem({
   index = 0,
   onDragPointerDown,
   dragging = false,
+  leaving = false,
+  onToggle,
 }: {
   task: TaskItemData;
   kind: TaskKind;
   extra?: ReactNode;
   /** Position in its list, used to stagger the entrance. */
   index?: number;
+  /**
+   * Set while the row is on its way out of this list. Only the owning list
+   * knows a row is leaving — the row itself cannot tell a completion from a
+   * completion that is about to be filed somewhere else.
+   */
+  leaving?: boolean;
+  /**
+   * Fired with the state the tap is heading for, at the moment it is tapped
+   * rather than when the server confirms. A list that groups by completion
+   * needs to know as early as the checkbox does.
+   */
+  onToggle?: (done: boolean) => void;
   /**
    * Present adds a drag grip. The grip rather than the whole row, because a
    * row fills the list's width — making all of it drag-on-touch would leave
@@ -67,7 +81,8 @@ export default function TaskItem({
         visuals.surface,
         pending && "opacity-60",
         done && "opacity-60",
-        dragging && "opacity-25"
+        dragging && "opacity-25",
+        leaving && "animate-item-out"
       )}
     >
       {/* Clipped by its own wrapper rather than the row, so the row can still
@@ -103,7 +118,10 @@ export default function TaskItem({
       <div className="relative flex-none">
         <button
           type="button"
-          onClick={() => toggle(task.occurrenceDate ?? new Date(), task.xp)}
+          onClick={() => {
+            onToggle?.(!done);
+            toggle(task.occurrenceDate ?? new Date(), task.xp);
+          }}
           aria-label={done ? "완료 취소" : "완료로 표시"}
           aria-pressed={done}
           className={cn(
