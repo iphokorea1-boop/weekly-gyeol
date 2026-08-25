@@ -109,6 +109,17 @@ const FEATURES = [
 ];
 
 const LIMITS = [
+  // First, because it is the one that stops a reader today rather than
+  // disappointing them later. A page that says "just an email address" and a
+  // form that then asks for a code is a page that lied.
+  {
+    title: "초대받은 분만 가입할 수 있습니다",
+    body: "가입하려면 초대 코드가 필요합니다. 아직 아무 주소로나 계정을 만들 수 있게 열어둘 준비가 되지 않았습니다.",
+  },
+  {
+    title: "비밀번호를 잊으면 되돌릴 수 없습니다",
+    body: "재설정 메일을 보낼 발신 도메인이 아직 없습니다. 브라우저나 비밀번호 관리자에 꼭 저장해 두십시오.",
+  },
   {
     title: "삭제에 되돌리기가 없습니다",
     body: "X 버튼은 즉시 영구 삭제입니다. 확인 창도 없습니다. 지우기 전에 한 번 더 보십시오.",
@@ -349,8 +360,9 @@ export default function Landing() {
               오늘 · 주간 · 월간 · 연간
             </h3>
             <p className="text-pretty text-ink-soft">
-              오늘은 지금 해야 할 것만. 주간은 시간을 배치하는 판. 월간은 약속이
-              몰린 곳을 보는 눈. 연간은 이어온 기록을 한 장에.
+              오늘은 지금 해야 할 것만 — 끝낸 일은 목록에서 빠져 아래 완료함에
+              모입니다. 주간은 시간을 배치하는 판. 월간은 약속이 몰린 곳을 보는
+              눈. 연간은 이어온 기록을 한 장에.
             </p>
             <p className="text-pretty text-ink-soft">
               같은 데이터를 네 가지 거리에서 봅니다. 가까이서는 할 일이고,
@@ -507,8 +519,8 @@ export default function Landing() {
             이번 주부터 놓아보십시오
           </h2>
           <p className="max-w-md text-pretty text-ink-soft">
-            가입에 필요한 것은 메일 주소 하나입니다. 미배치함에 세 가지만
-            적어두고, 이번 주 격자로 하나만 끌어다 놓아 보십시오.
+            초대 코드와 메일 주소가 있으면 시작할 수 있습니다. 미배치함에 세
+            가지만 적어두고, 이번 주 격자로 하나만 끌어다 놓아 보십시오.
           </p>
           <StartButton />
           <div className="mt-2 grid w-full grid-cols-7 gap-1.5" aria-hidden>
