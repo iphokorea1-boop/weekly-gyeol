@@ -522,7 +522,14 @@ export default function Landing() {
             초대 코드와 메일 주소가 있으면 시작할 수 있습니다. 미배치함에 세
             가지만 적어두고, 이번 주 격자로 하나만 끌어다 놓아 보십시오.
           </p>
-          <StartButton />
+          {/* Beside the button rather than in a pricing section of its own:
+              there is one price, and a section would imply there are tiers. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <StartButton />
+            <span className="text-xs text-ink-faint">
+              무료입니다. 결제 수단을 묻지 않습니다.
+            </span>
+          </div>
           <div className="mt-2 grid w-full grid-cols-7 gap-1.5" aria-hidden>
             <i className="h-1.5 rounded-full bg-border" />
             <i className="h-1.5 rounded-full bg-routine" />
