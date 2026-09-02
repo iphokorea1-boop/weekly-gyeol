@@ -53,9 +53,36 @@ export default async function Home() {
   const routines = tasks.filter(
     (t) => taskKind(t) === "routine" && routineOccursOn(t.weekdays, today)
   );
+  /**
+   * A dated task is finished when a completion is filed against its own due
+   * date — never against today, which is why an overdue row ticked this
+   * morning still reads as "done on 8월 21일".
+   */
+  const datedDone = (t: (typeof tasks)[number]) =>
+    t.completions.some((c) => isSameDay(new Date(c.date), new Date(t.dueDate!)));
+
+  /**
+   * Which dated tasks belong on today's board.
+   *
+   * The rule was nothing but `dueDate <= today`, which quietly meant every
+   * dated task ever completed stayed here for good: one account had nineteen
+   * rows on this page with fourteen of them finished weeks earlier, and the
+   * 완료 pile only ever grew. The weekly board hid that — its 종일 chips drew
+   * finished and unfinished identically — so the page looked like it had lost
+   * the two it had actually filed away.
+   *
+   * So the past is carried over only while it is still unfinished. The one
+   * exception is a row finished *today*: its completion is filed under its own
+   * due date, so without this it would vanish mid-tap instead of settling into
+   * 완료 where the person just put it.
+   */
   const dated = tasks.filter((t) => {
     if (taskKind(t) !== "dated" || !t.dueDate) return false;
-    return toDateOnly(new Date(t.dueDate)) <= today;
+    const due = toDateOnly(new Date(t.dueDate));
+    if (due > today) return false;
+    if (isSameDay(due, today)) return true;
+    if (!datedDone(t)) return true;
+    return t.completions.some((c) => isSameDay(new Date(c.completedAt), today));
   });
   const floating = tasks.filter((t) => taskKind(t) === "floating");
 
@@ -79,7 +106,7 @@ export default async function Home() {
       title: t.title,
       startTime: t.startTime,
       endTime: t.endTime,
-      done: t.completions.some((c) => isSameDay(new Date(c.date), due)),
+      done: datedDone(t),
       xp: xpFor(t.priority),
       occurrenceDate: due,
       overdue: toDateOnly(due) < today,

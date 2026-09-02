@@ -387,34 +387,42 @@ function Board({ weekDates, todayISO, tasks, holidays, thumb }: BoardProps) {
                       {name}
                     </span>
                   ))}
-                  {allDayDated.map((t) => (
-                    <span
-                      key={t.id}
-                      data-nq
-                      onPointerDown={(event) =>
-                        begin(
-                          {
-                            taskId: t.id,
-                            title: t.title,
-                            kind: "dated",
-                            durationMinutes: null,
-                            hasEnd: false,
-                            grabOffsetMinutes: 0,
-                            originDate: dateISO,
-                          },
-                          event
-                        )
-                      }
-                      style={{ touchAction: "none" }}
-                      className={cn(
-                        CHIP,
-                        "cursor-grab border-dated bg-dated-soft text-dated-ink active:cursor-grabbing",
-                        held?.taskId === t.id && "opacity-25"
-                      )}
-                    >
-                      {t.title}
-                    </span>
-                  ))}
+                  {allDayDated.map((t) => {
+                    // The month grid strikes a finished chip through; this row
+                    // did not, so a task completed on its own day looked exactly
+                    // like one still open — and the today page, which does file
+                    // it under 완료, then read as having lost it.
+                    const done = t.completions.includes(dateISO);
+                    return (
+                      <span
+                        key={t.id}
+                        data-nq
+                        onPointerDown={(event) =>
+                          begin(
+                            {
+                              taskId: t.id,
+                              title: t.title,
+                              kind: "dated",
+                              durationMinutes: null,
+                              hasEnd: false,
+                              grabOffsetMinutes: 0,
+                              originDate: dateISO,
+                            },
+                            event
+                          )
+                        }
+                        style={{ touchAction: "none" }}
+                        className={cn(
+                          CHIP,
+                          "cursor-grab border-dated bg-dated-soft text-dated-ink active:cursor-grabbing",
+                          done && "opacity-50 line-through",
+                          held?.taskId === t.id && "opacity-25"
+                        )}
+                      >
+                        {t.title}
+                      </span>
+                    );
+                  })}
                 </div>
               );
             })}
