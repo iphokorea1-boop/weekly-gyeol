@@ -185,6 +185,7 @@ export function ShortcutsProvider({
         openQuickAdd(
           {
             kind: "dated",
+            title: "",
             dueDate: today,
             startTime: "",
             endTime: "",

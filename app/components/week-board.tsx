@@ -155,6 +155,7 @@ function Board({ weekDates, todayISO, tasks, holidays, thumb }: BoardProps) {
     openQuickAdd(
       {
         kind: "dated",
+        title: "",
         dueDate: dateISO,
         startTime,
         endTime: minutesToTime(start + DEFAULT_DURATION_MINUTES),
@@ -174,6 +175,7 @@ function Board({ weekDates, todayISO, tasks, holidays, thumb }: BoardProps) {
     openQuickAdd(
       {
         kind: "dated",
+        title: "",
         dueDate: dateISO,
         startTime: "",
         endTime: "",

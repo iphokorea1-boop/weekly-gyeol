@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/dal";
 import {
   capacityPercent,
+  formatDateISO,
   formatKo,
   formatWeekdays,
   isSameDay,
+  parseWeekdays,
   routineOccursOn,
   taskKind,
   todayInSeoul,
@@ -13,6 +15,7 @@ import {
 import { holidayLabel, holidaysOn } from "@/lib/holidays";
 import { computeStreaks, totalXp, xpFor } from "@/lib/gamification";
 import { type TaskItemData } from "@/app/components/task-item";
+import type { TaskDraft } from "@/app/components/task-form";
 import TodayBoard from "@/app/components/today-board";
 import AddTaskForm from "@/app/components/add-task-form";
 import KindLegend from "@/app/components/kind-legend";
@@ -86,6 +89,24 @@ export default async function Home() {
   });
   const floating = tasks.filter((t) => taskKind(t) === "floating");
 
+  /**
+   * What a row opens its edit form on. Built from the raw row here because the
+   * item shapes below keep only what a row *draws* — a label like "월, 수"
+   * rather than the days themselves, and no due date at all on a routine.
+   */
+  const toDraft = (t: (typeof tasks)[number]): TaskDraft => ({
+    kind: taskKind(t),
+    title: t.title,
+    // Something with no date of its own still opens on one, so switching it to
+    // 날짜 있는 할 일 has today to offer rather than an empty field.
+    dueDate: t.dueDate
+      ? formatDateISO(new Date(t.dueDate))
+      : formatDateISO(today),
+    startTime: t.startTime ?? "",
+    endTime: t.endTime ?? "",
+    weekdays: parseWeekdays(t.weekdays),
+  });
+
   const toRoutineItem = (t: (typeof tasks)[number]): TaskItemData => {
     const days = t.weekdays?.split(",").length ?? 0;
     return {
@@ -96,6 +117,7 @@ export default async function Home() {
       weekdaysLabel: days < 7 ? formatWeekdays(t.weekdays) : undefined,
       done: t.completions.some((c) => isSameDay(new Date(c.date), today)),
       xp: xpFor(t.priority),
+      editDraft: toDraft(t),
     };
   };
 
@@ -110,6 +132,7 @@ export default async function Home() {
       xp: xpFor(t.priority),
       occurrenceDate: due,
       overdue: toDateOnly(due) < today,
+      editDraft: toDraft(t),
     };
   };
 
@@ -120,6 +143,7 @@ export default async function Home() {
     endTime: null,
     done: t.completions.length > 0,
     xp: xpFor(t.priority),
+    editDraft: toDraft(t),
   });
 
   const scheduled = [...dated, ...routines];
@@ -183,7 +207,14 @@ export default async function Home() {
         <AddTaskForm />
       </section>
 
-      <KindLegend className="mt-auto pt-4" />
+      <div className="mt-auto flex flex-col gap-2 pt-4">
+        <KindLegend />
+        {/* A gesture nobody can find is a gesture nobody uses, and there is
+            nothing on a row that suggests it can be opened. */}
+        <p className="text-center text-[11px] text-ink-faint">
+          할 일을 두 번 누르면 수정할 수 있어요
+        </p>
+      </div>
     </div>
   );
 }

@@ -9,12 +9,14 @@ import { formatDateISO, todayInSeoul } from "@/lib/task-utils";
 export type DraftKind = "dated" | "routine" | "floating";
 
 /**
- * Everything the form starts out holding except the title, which always starts
- * empty. Split out so a calendar cell can hand the form a day — and, in the
- * weekly grid, an hour — that the user has already chosen by clicking.
+ * Everything the form starts out holding. Split out so a calendar cell can hand
+ * the form a day — and, in the weekly grid, an hour — the user has already
+ * chosen by clicking, and so a task being edited can hand back its own values.
  */
 export type TaskDraft = {
   kind: DraftKind;
+  /** Empty when adding; the task's current title when editing. */
+  title: string;
   /** `YYYY-MM-DD`. */
   dueDate: string;
   /** `HH:MM`, or "" for no time. */
@@ -26,6 +28,7 @@ export type TaskDraft = {
 export function emptyDraft(): TaskDraft {
   return {
     kind: "dated",
+    title: "",
     dueDate: formatDateISO(todayInSeoul()),
     startTime: "",
     endTime: "",
@@ -49,7 +52,8 @@ const inputClass =
   "rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-dated focus:ring-2 focus:ring-dated/25";
 
 /**
- * The add-a-task fields, with no opinion about where they are drawn.
+ * The task fields, with no opinion about where they are drawn or whether they
+ * are adding or editing.
  *
  * The state starts from `draft` and is never synced back to it: the component
  * is unmounted when it closes, so reopening on another day mounts a fresh copy
@@ -60,16 +64,24 @@ export default function TaskForm({
   caption,
   onClose,
   submitLabel = "추가",
+  taskId,
 }: {
   draft: TaskDraft;
   /** Which day (and time) this was opened on. Omitted on the today page. */
   caption?: string;
   onClose: () => void;
   submitLabel?: string;
+  /**
+   * Present edits that task rather than creating one. Both send the same
+   * fields — every one this form owns, with an explicit null where it holds
+   * nothing — so turning a dated task into a routine clears the due date
+   * instead of leaving it behind for another screen to find.
+   */
+  taskId?: string;
 }) {
   const router = useRouter();
   const [kind, setKind] = useState<DraftKind>(draft.kind);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(draft.title);
   const [dueDate, setDueDate] = useState(draft.dueDate);
   const [startTime, setStartTime] = useState(draft.startTime);
   const [endTime, setEndTime] = useState(draft.endTime);
@@ -94,15 +106,18 @@ export default function TaskForm({
     // that had been saved and then vanished. Every reason the route gives is
     // one a person can act on — too long, malformed, or the account's limit —
     // so the panel now stays open and says which.
-    const res = await fetch("/api/tasks", {
-      method: "POST",
+    const res = await fetch(taskId ? `/api/tasks/${taskId}` : "/api/tasks", {
+      method: taskId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title,
         dueDate: kind === "dated" ? dueDate : null,
         weekdays: kind === "routine" ? weekdays.sort().join(",") : null,
-        startTime: startTime || null,
-        endTime: endTime || null,
+        // A 언젠가 할 일 hides the time row, so it must not send what that row
+        // was holding before the kind was switched. Only what the form is
+        // still showing is what it means.
+        startTime: kind === "floating" ? null : startTime || null,
+        endTime: kind === "floating" ? null : endTime || null,
       }),
     }).catch(() => null);
 

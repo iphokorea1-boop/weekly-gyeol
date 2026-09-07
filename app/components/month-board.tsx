@@ -101,6 +101,7 @@ function Grid({
     openQuickAdd(
       {
         kind: "dated",
+        title: "",
         dueDate: dateISO,
         // The month grid cannot express a time of day, so it does not guess at
         // one. The task lands in the 종일 row until it is dragged into an hour.

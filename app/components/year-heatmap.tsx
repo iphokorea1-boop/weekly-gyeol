@@ -87,6 +87,7 @@ function Months({ months }: { months: HeatMonth[] }) {
                   openQuickAdd(
                     {
                       kind: "dated",
+                      title: "",
                       dueDate: day.dateISO,
                       startTime: "",
                       endTime: "",

@@ -1,11 +1,31 @@
 "use client";
 
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import {
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { Check, GripVertical, X } from "lucide-react";
 import type { TaskKind } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { KIND_VISUALS } from "@/app/components/task-visuals";
+import TaskForm, { type TaskDraft } from "@/app/components/task-form";
 import { useTaskActions } from "@/app/components/use-task-actions";
+
+/**
+ * How close together two taps have to be — in time, and on screen — to count
+ * as one gesture rather than two.
+ *
+ * Both are deliberately forgiving. A finger wanders between taps far more than
+ * a mouse does, and the cost of being generous here is nil: a single tap on
+ * this row does nothing at all, so a pair read where none was meant opens a
+ * form that one press of 취소 closes. Being strict costs a gesture that
+ * silently fails, which is the worse of the two.
+ */
+const DOUBLE_TAP_MS = 450;
+const DOUBLE_TAP_PX = 40;
 
 export type TaskItemData = {
   id: string;
@@ -23,6 +43,12 @@ export type TaskItemData = {
    * unchecked. Routines and backlog items just use today.
    */
   occurrenceDate?: Date;
+  /**
+   * Present makes the row editable: a double tap swaps it for the task form,
+   * opened on these values. Absent leaves the row read-only, which is what the
+   * weekly board's 248px backlog column wants — the form does not fit there.
+   */
+  editDraft?: TaskDraft;
 };
 
 export default function TaskItem({
@@ -64,6 +90,27 @@ export default function TaskItem({
     task.id,
     task.done
   );
+  const [editing, setEditing] = useState(false);
+  const lastTap = useRef<{ at: number; x: number; y: number } | null>(null);
+
+  // Mounted only while editing, so a cancelled edit leaves nothing behind and
+  // the next one opens on the row as it stands by then rather than on the
+  // values it held the first time.
+  if (editing && task.editDraft) {
+    return (
+      // w-full so the panel claims its own line in the 미배치함 section,
+      // whose rows sit in a wrapping flex row rather than a column.
+      <div className="animate-panel-in w-full rounded-xl border border-border bg-surface p-4 shadow-sm">
+        <TaskForm
+          taskId={task.id}
+          draft={task.editDraft}
+          onClose={() => setEditing(false)}
+          submitLabel="저장"
+        />
+      </div>
+    );
+  }
+
   const visuals = KIND_VISUALS[kind];
   const KindIcon = visuals.icon;
   const meta = [task.weekdaysLabel, task.startTime && task.endTime
@@ -72,13 +119,61 @@ export default function TaskItem({
     .filter(Boolean)
     .join(" · ");
 
+  /**
+   * Two taps rather than one. A single tap on a row is how you scroll past it
+   * on a phone, and the controls inside the row already answer to one — so a
+   * single tap opening a form would take the checkbox's gesture away from it.
+   *
+   * The pair is counted here rather than left to the browser's `dblclick`.
+   * That event is dependable under a mouse and not under a finger: once
+   * `.pressable`'s `touch-action: manipulation` tells the browser it need not
+   * wait to see whether a second tap means "zoom", mobile browsers stop
+   * synthesising the double event and report two ordinary taps instead — which
+   * is why the first version of this did nothing on a phone. Counting clicks
+   * covers both, because a tap is a click everywhere.
+   */
+  function handleTap(event: ReactMouseEvent<HTMLDivElement>) {
+    // The checkbox, the drag grip and the delete button own their own taps, and
+    // a tap one of them has answered cannot be half of this gesture.
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, a, input")
+    ) {
+      lastTap.current = null;
+      return;
+    }
+
+    const now = Date.now();
+    const previous = lastTap.current;
+    lastTap.current = { at: now, x: event.clientX, y: event.clientY };
+
+    if (
+      !previous ||
+      now - previous.at > DOUBLE_TAP_MS ||
+      Math.hypot(event.clientX - previous.x, event.clientY - previous.y) >
+        DOUBLE_TAP_PX
+    ) {
+      return;
+    }
+
+    lastTap.current = null;
+    // A double click selects the word under it. Cleared here so a highlight
+    // doesn't flash across the title as the form takes the row's place.
+    window.getSelection()?.removeAllRanges();
+    setEditing(true);
+  }
+
   return (
     <div
+      onClick={task.editDraft ? handleTap : undefined}
       // Capped at 6 so a long list doesn't leave the last rows visibly waiting.
       style={{ animationDelay: `${Math.min(index, 6) * 45}ms` }}
       className={cn(
         "pressable press-soft lift animate-item-in group relative flex items-center gap-2.5 rounded-xl border py-2.5 pl-5 pr-2.5",
         visuals.surface,
+        // Also what makes the tap register on iOS, which drops delegated click
+        // events on elements it has not been told are interactive.
+        task.editDraft && "cursor-pointer",
         pending && "opacity-60",
         done && "opacity-60",
         dragging && "opacity-25",
