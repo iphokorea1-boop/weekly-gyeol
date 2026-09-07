@@ -212,7 +212,7 @@ export default async function Home() {
         {/* A gesture nobody can find is a gesture nobody uses, and there is
             nothing on a row that suggests it can be opened. */}
         <p className="text-center text-[11px] text-ink-faint">
-          할 일을 두 번 누르면 수정할 수 있어요
+          할 일을 누르면 수정할 수 있어요
         </p>
       </div>
     </div>
