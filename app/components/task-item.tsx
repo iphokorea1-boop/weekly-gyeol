@@ -183,7 +183,16 @@ export default function TaskItem({
           aria-label={done ? "완료 취소" : "완료로 표시"}
           aria-pressed={done}
           className={cn(
-            "pressable press-deep grid h-5 w-5 place-items-center rounded-full border-2",
+            "pressable press-deep relative grid h-5 w-5 place-items-center rounded-full border-2",
+            // Drawn at 20px, tapped at 36. The circle used to be the only
+            // thing on the row that answered a tap, so missing it did nothing
+            // and the small target cost nothing. Now the row itself opens the
+            // editor, and a miss by three pixels does something quite
+            // different from what was aimed at. The reach is added with a
+            // pseudo-element so it stays out of the layout, and a tap landing
+            // on it still reports the button as its target — which is exactly
+            // what the row's handler checks before opening anything.
+            "before:absolute before:-inset-2 before:content-['']",
             "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
             done ? cn("border-transparent", visuals.check) : visuals.checkIdle,
             celebrating && "animate-check-pop"
