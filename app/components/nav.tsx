@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays, CalendarRange, Keyboard, LayoutGrid, LogOut, Sun } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarRange,
+  Keyboard,
+  LayoutGrid,
+  LogOut,
+  Settings,
+  Sun,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
 import { useShortcutHelp } from "@/app/components/shortcuts";
@@ -136,6 +144,18 @@ export default function Nav({ user }: { user: CurrentUser | null }) {
               <Keyboard className="h-3.5 w-3.5" strokeWidth={2.5} />
             </button>
           )}
+
+          {/* Outside the tab list on purpose: the sliding pill measures
+              whatever carries aria-current inside that list, and settings is
+              not one of the four distances the app is arranged by. */}
+          <Link
+            href="/settings"
+            title="설정"
+            aria-label="설정"
+            className="pressable press-deep lift grid h-9 w-9 place-items-center rounded-full border border-border bg-surface text-ink-soft hover:text-foreground"
+          >
+            <Settings className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </Link>
 
           <form action={logout}>
             <button
