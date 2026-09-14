@@ -17,6 +17,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import {
   addDays,
   durationMinutes,
+  isSameDay,
   KST_OFFSET_MINUTES,
   parseTimeToMinutes,
   parseWeekdays,
@@ -60,10 +61,22 @@ export type CalendarTask = {
   endTime: string | null;
   weekdays: string | null;
   createdAt: Date;
+  /** One entry per day the task was ticked, as date-only values. */
+  completions: { date: Date }[];
 };
 
 /** RRULE weekday codes, indexed the way the database stores them: 0 = Sunday. */
 const BYDAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+/**
+ * What a finished item is prefixed with.
+ *
+ * A calendar has no strike-through and no checkbox, so the title is the only
+ * place "done" can be said. Left unmarked, a finished task and an unfinished
+ * one look identical on the day — which turned a month of calendar into a
+ * month of things that all appeared to still need doing.
+ */
+const DONE = "✓";
 
 /**
  * RFC 5545 escaping for a TEXT value.
@@ -156,74 +169,124 @@ function firstOccurrence(weekdays: number[], from: Date): Date {
 }
 
 /**
- * One task as its VEVENT lines, or null when it does not belong on a calendar.
+ * How one occurrence sits on its day: the DTSTART/DTEND pair, and the
+ * matching RECURRENCE-ID form for when that occurrence has to be named.
  *
- * 언젠가 할 일 is the null. It has neither a date nor a weekday, which is the
- * entire point of it; a calendar has nowhere to put such a thing, and choosing
- * a day on its behalf would quietly turn the backlog into a pile of
- * appointments nobody made.
+ * Both come from the same place so they cannot disagree. A RECURRENCE-ID that
+ * does not match the master's DTSTART for that day — a DATE against a
+ * date-time, or a time one minute off — is silently ignored by clients, and
+ * the override it was carrying simply never appears.
  */
-function eventFor(
-  task: CalendarTask,
-  uidHost: string,
-  appHref: string,
-  stamp: string
-): string[] | null {
-  const minutes = parseTimeToMinutes(task.startTime);
-  const length = durationMinutes(task.startTime, task.endTime);
-  const weekdays = parseWeekdays(task.weekdays);
-
-  const when: string[] = [];
-
-  if (weekdays.length > 0) {
-    const first = firstOccurrence(weekdays, task.createdAt);
-    if (minutes === null) {
-      when.push(
-        `DTSTART;VALUE=DATE:${stampDate(first)}`,
-        `DTEND;VALUE=DATE:${stampDate(addDays(first, 1))}`
-      );
-    } else {
-      const start = seoulInstant(first, minutes);
-      when.push(
-        `DTSTART:${stampUtc(start)}`,
-        `DTEND:${stampUtc(new Date(start.getTime() + length * 60_000))}`
-      );
-    }
-    when.push(
-      `RRULE:FREQ=WEEKLY;BYDAY=${weekdays.map((d) => BYDAY[d]).join(",")}`
-    );
-  } else if (task.dueDate) {
-    const day = toDateOnly(new Date(task.dueDate));
-    if (minutes === null) {
-      // DTEND is exclusive for an all-day event: a one-day event ends the
-      // following morning, and saying otherwise draws it across two days.
-      when.push(
+function placement(day: Date, minutes: number | null, length: number) {
+  if (minutes === null) {
+    return {
+      span: [
         `DTSTART;VALUE=DATE:${stampDate(day)}`,
-        `DTEND;VALUE=DATE:${stampDate(addDays(day, 1))}`
-      );
-    } else {
-      const start = seoulInstant(day, minutes);
-      when.push(
-        `DTSTART:${stampUtc(start)}`,
-        `DTEND:${stampUtc(new Date(start.getTime() + length * 60_000))}`
-      );
-    }
-  } else {
-    return null;
+        // DTEND is exclusive for an all-day event: a one-day event ends the
+        // following morning, and saying otherwise draws it across two days.
+        `DTEND;VALUE=DATE:${stampDate(addDays(day, 1))}`,
+      ],
+      recurrenceId: `RECURRENCE-ID;VALUE=DATE:${stampDate(day)}`,
+    };
   }
+  const start = seoulInstant(day, minutes);
+  const end = new Date(start.getTime() + length * 60_000);
+  return {
+    span: [`DTSTART:${stampUtc(start)}`, `DTEND:${stampUtc(end)}`],
+    recurrenceId: `RECURRENCE-ID:${stampUtc(start)}`,
+  };
+}
 
+function vevent(
+  uid: string,
+  stamp: string,
+  summary: string,
+  memo: string | null,
+  when: string[],
+  appHref: string
+): string[] {
   return [
     "BEGIN:VEVENT",
     // A UID has to stay the same for the life of an event, or every refresh
     // files the whole feed again as new events beside the old ones.
-    `UID:${task.id}@${uidHost}`,
+    `UID:${uid}`,
     `DTSTAMP:${stamp}`,
-    fold(`SUMMARY:${escapeText(task.title)}`),
-    ...(task.memo ? [fold(`DESCRIPTION:${escapeText(task.memo)}`)] : []),
+    fold(`SUMMARY:${escapeText(summary)}`),
+    ...(memo ? [fold(`DESCRIPTION:${escapeText(memo)}`)] : []),
     ...when,
     fold(`URL:${appHref}`),
     "END:VEVENT",
   ];
+}
+
+/**
+ * One task as its VEVENT blocks — usually one, but a routine with ticked days
+ * carries one more per tick — or nothing when it does not belong on a
+ * calendar.
+ *
+ * 언젠가 할 일 is the nothing. It has neither a date nor a weekday, which is
+ * the entire point of it; a calendar has nowhere to put such a thing, and
+ * choosing a day on its behalf would quietly turn the backlog into a pile of
+ * appointments nobody made.
+ */
+function eventsFor(
+  task: CalendarTask,
+  uidHost: string,
+  appHref: string,
+  stamp: string
+): string[] {
+  const uid = `${task.id}@${uidHost}`;
+  const minutes = parseTimeToMinutes(task.startTime);
+  const length = durationMinutes(task.startTime, task.endTime);
+  const weekdays = parseWeekdays(task.weekdays);
+  const done = `${DONE} ${task.title}`;
+
+  if (weekdays.length > 0) {
+    const first = firstOccurrence(weekdays, task.createdAt);
+    const rule = `RRULE:FREQ=WEEKLY;BYDAY=${weekdays.map((d) => BYDAY[d]).join(",")}`;
+    const master = placement(first, minutes, length);
+    const out = vevent(uid, stamp, task.title, task.memo, [...master.span, rule], appHref);
+
+    // A recurring event is one VEVENT, so a single occurrence cannot be
+    // renamed in place. What the format offers instead is an override: a
+    // second VEVENT with the same UID and a RECURRENCE-ID naming the
+    // occurrence it replaces. One per ticked day, and only for days the
+    // series actually lands on — a completion recorded before the weekdays
+    // were changed has no occurrence to override, and naming one that does
+    // not exist is ignored at best.
+    for (const completion of task.completions) {
+      const day = toDateOnly(new Date(completion.date));
+      if (day < first || !weekdays.includes(day.getUTCDay())) continue;
+      const occurrence = placement(day, minutes, length);
+      out.push(
+        ...vevent(
+          uid,
+          stamp,
+          done,
+          task.memo,
+          [occurrence.recurrenceId, ...occurrence.span],
+          appHref
+        )
+      );
+    }
+    return out;
+  }
+
+  if (!task.dueDate) return [];
+
+  const day = toDateOnly(new Date(task.dueDate));
+  // Finished means ticked against its own due date — the same rule the today
+  // board applies, so a task overdue and ticked late reads as done on the day
+  // it was for, not on the day the box was pressed.
+  const finished = task.completions.some((c) => isSameDay(new Date(c.date), day));
+  return vevent(
+    uid,
+    stamp,
+    finished ? done : task.title,
+    task.memo,
+    placement(day, minutes, length).span,
+    appHref
+  );
 }
 
 /**
@@ -257,8 +320,7 @@ export function buildCalendar(
   ];
 
   for (const task of tasks) {
-    const block = eventFor(task, uidHost, appHref, stamp);
-    if (block) lines.push(...block);
+    lines.push(...eventsFor(task, uidHost, appHref, stamp));
   }
 
   lines.push("END:VCALENDAR");

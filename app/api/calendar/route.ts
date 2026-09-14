@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
       endTime: true,
       weekdays: true,
       createdAt: true,
+      completions: { select: { date: true } },
     },
   });
 

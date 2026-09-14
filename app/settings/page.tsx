@@ -54,7 +54,7 @@ export default async function SettingsPage() {
             <p className="mt-1 text-[13px] leading-relaxed text-ink-soft">
               주간결의 일정을 Google·Apple·Outlook 캘린더에서 볼 수 있습니다.
               정기 루틴은 주간 반복 일정으로, 날짜 있는 할 일은 그 날의 일정으로
-              나갑니다.
+              나가고, 완료한 것은 제목 앞에 ✓가 붙습니다.
             </p>
           </div>
         </div>
